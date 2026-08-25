@@ -27,6 +27,20 @@ Submit a complaint with `POST /api/v1/complaints` using a description and exactl
 
 Submission writes the private case, initial status event, and versioned `complaint.created.v1` outbox event in one transaction. The outbox is the handoff for future asynchronous processing; AI, OCR, clustering, routing, and notifications do not block acknowledgement.
 
+## Citizen web development
+
+Install and run the citizen app from its directory:
+
+```powershell
+Push-Location apps/citizen-web
+npm ci
+$env:API_ORIGIN = "http://127.0.0.1:8000"
+npm run dev
+Pop-Location
+```
+
+The app exposes the report form at `/` and private docket tracking at `/track`. `API_ORIGIN` is read when Next.js starts or builds so the same-origin API proxy points at the running FastAPI service.
+
 ## Database development
 
 The API uses PostgreSQL with pgvector as its transactional database. Start the local database with:
