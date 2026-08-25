@@ -23,6 +23,8 @@ python -m uvicorn services.api.app.main:app --reload
 
 The service exposes `GET /health` and returns a versioned service status. Complaint intake and asynchronous intelligence processing are planned for later milestones.
 
+The AI package currently provides a deterministic, explainable complaint classifier for worker use. It returns structured sector, issue, severity, financial-impact, evidence, duplicate-hint, confidence, and provenance fields; it is advisory and does not run on the complaint acknowledgement path.
+
 Submit a complaint with `POST /api/v1/complaints` using a description and exactly one tracking contact (`email` or `phone`). The response returns a non-sequential docket immediately. Track it with `POST /api/v1/complaints/track`; tracking requires the docket and the same contact, and returns a plain-language status timeline without private complaint content.
 
 Submission writes the private case, initial status event, and versioned `complaint.created.v1` outbox event in one transaction. The outbox is the handoff for future asynchronous processing; AI, OCR, clustering, routing, and notifications do not block acknowledgement.
