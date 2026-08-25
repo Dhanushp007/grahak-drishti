@@ -116,10 +116,52 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .timeline-list strong, .timeline-list p { font-family: Arial, sans-serif; }
 .timeline-list strong { font-size: 12px; }
 .timeline-list p { color: var(--muted); font-size: 12px; line-height: 1.4; margin: 5px 0 0; }
+.issues-heading { margin: 90px 7% 48px; max-width: 580px; }
+.issue-list { margin: 0 7% 90px; }
+.issue-list-item { align-items: center; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); display: grid; gap: 28px; grid-template-columns: 1fr 180px 24px; padding: 26px 0; text-decoration: none; transition: padding .2s, background .2s; }
+.issue-list-item:hover { background: var(--mint); padding-left: 18px; padding-right: 18px; }
+.issue-list-item h2 { font-size: 28px; }
+.issue-list-item p:not(.eyebrow) { color: var(--muted); font-family: Arial, sans-serif; font-size: 12px; margin: 8px 0 0; }
+.issue-list-stats { display: flex; flex-direction: column; font-family: Arial, sans-serif; gap: 4px; }
+.issue-list-stats strong { font-size: 22px; }
+.issue-list-stats span { align-items: center; color: var(--muted); display: flex; font-size: 11px; gap: 5px; }
+.issue-arrow { color: var(--teal); }
+.issue-hero { margin: 84px 7% 56px; max-width: 720px; }
+.issue-hero h1 { font-size: clamp(48px, 6vw, 78px); max-width: 720px; }
+.issue-subtitle { color: var(--muted); font-family: Arial, sans-serif; font-size: 13px; margin: 22px 0; }
+.issue-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.issue-tags span { background: var(--mint); color: var(--teal); font-family: Arial, sans-serif; font-size: 11px; padding: 8px 11px; }
+.issue-detail-grid { display: grid; gap: 28px; grid-template-columns: .8fr 1.2fr; margin: 0 7% 58px; }
+.signal-score { background: var(--ink); color: white; padding: 30px; }
+.signal-score .eyebrow { color: var(--yellow); }
+.signal-score strong { display: block; font-family: Arial, sans-serif; font-size: 47px; }
+.signal-score span { color: #a6bbb2; font-family: Arial, sans-serif; font-size: 11px; }
+.signal-score p:last-child { color: #d0ded7; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5; margin: 44px 0 0; max-width: 270px; }
+.metric-grid { display: grid; gap: 1px; grid-template-columns: 1fr 1fr; }
+.metric-grid > div { background: #fff; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; padding: 22px; }
+.metric-grid svg { color: var(--coral); }
+.metric-grid strong { font-family: Arial, sans-serif; font-size: 25px; }
+.metric-grid span { color: var(--muted); font-family: Arial, sans-serif; font-size: 11px; }
+.metric-symbol { color: var(--coral) !important; font-size: 14px !important; font-weight: 700; }
+.signal-action { align-items: center; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); display: flex; gap: 30px; justify-content: space-between; margin: 0 7%; padding: 34px 0; }
+.signal-action h2 { font-size: 30px; }
+.signal-action p:not(.eyebrow) { color: var(--muted); font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; margin: 8px 0 0; max-width: 480px; }
+.action-buttons { align-items: center; display: flex; flex: 0 0 auto; gap: 10px; }
+.icon-button { align-items: center; background: transparent; border: 1px solid var(--line); color: var(--teal); cursor: pointer; display: inline-flex; height: 50px; justify-content: center; width: 50px; }
+.icon-button:hover { border-color: var(--teal); }
+.issue-disclaimer { color: var(--muted); font-family: Arial, sans-serif; font-size: 11px; line-height: 1.5; margin: 36px 7% 70px; max-width: 620px; }
 
 @media (max-width: 800px) {
   .tracking-layout { display: block; margin: 0; padding: 58px 0 54px; }
   .tracking-intro { padding: 0 4px 48px; }
+  .issues-heading, .issue-list, .issue-hero, .issue-detail-grid { margin-left: 0; margin-right: 0; }
+  .issue-list-item { grid-template-columns: 1fr 24px; }
+  .issue-list-stats { grid-column: 1; grid-row: 2; }
+  .issue-arrow { grid-column: 2; grid-row: 1 / span 2; }
+  .issue-detail-grid { display: block; }
+  .signal-score { margin-bottom: 18px; }
+  .signal-action { align-items: flex-start; flex-direction: column; margin-left: 0; margin-right: 0; }
+  .issue-disclaimer { margin-left: 0; margin-right: 0; }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }

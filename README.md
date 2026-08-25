@@ -29,6 +29,8 @@ The same package provides a provider-replaceable 128-dimensional deterministic e
 
 The clustering worker can turn accepted duplicate candidates into an aggregate issue cluster. Its private record retains member IDs for internal processing, while the public projection exposes only issue, company, sector, count, amount, and time aggregates; complaint narratives and identifiers are excluded.
 
+The consumer signal module applies the PRD weights for affected consumers, growth, financial impact, severity, unresolved rate, and geographic spread. The citizen app includes a synthetic aggregate issue view at `/issues` with a one-time “I experienced this too” interaction; persistence and authenticated signal deduplication remain future API work.
+
 Submit a complaint with `POST /api/v1/complaints` using a description and exactly one tracking contact (`email` or `phone`). The response returns a non-sequential docket immediately. Track it with `POST /api/v1/complaints/track`; tracking requires the docket and the same contact, and returns a plain-language status timeline without private complaint content.
 
 Submission writes the private case, initial status event, and versioned `complaint.created.v1` outbox event in one transaction. The outbox is the handoff for future asynchronous processing; AI, OCR, clustering, routing, and notifications do not block acknowledgement.
