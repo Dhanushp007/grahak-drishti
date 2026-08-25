@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  repository-structure:
+    name: Validate repository structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check required paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_paths=(
+            "apps/citizen-web"
+            "apps/admin-dashboard"
+            "services/api"
+            "services/ai"
+            "services/clustering-worker"
+            "services/complaint-worker"
+            "services/notification-worker"
+            "services/routing-engine"
+            "packages/schemas"
+            "packages/rules"
+            "packages/ui"
+            "data/regulatory-kb"
+            "data/seed"
+            "data/synthetic"
+            "infrastructure/kafka"
+            "infrastructure/minio"
+            "infrastructure/monitoring"
+            "infrastructure/opensearch"
+            "infrastructure/postgres"
+            "docs/api"
+            "docs/architecture"
+            "docs/prd"
+            ".github/agents"
+            ".github/instructions"
+            ".github/workflows"
+          )
+
+          for path in "${required_paths[@]}"; do
+            test -d "$path"
+          done
+
+          required_files=(
+            ".github/agents/architect.agent.md"
+            ".github/agents/backend.agent.md"
+            ".github/agents/frontend.agent.md"
+            ".github/agents/ai.agent.md"
+            ".github/agents/reviewer.agent.md"
+            ".github/instructions/backend.instructions.md"
+            ".github/instructions/frontend.instructions.md"
+            ".github/instructions/database.instructions.md"
+            ".github/instructions/ai.instructions.md"
+            ".github/instructions/testing.instructions.md"
+          )
+
+          for path in "${required_files[@]}"; do
+            test -f "$path"
+          done
