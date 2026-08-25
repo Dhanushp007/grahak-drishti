@@ -124,3 +124,32 @@ jobs:
           trap 'rm -f "$smoke_db"' EXIT
           python -m alembic upgrade head
           python scripts/api_smoke_test.py
+
+  citizen-web:
+    name: Validate citizen web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/citizen-web
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/citizen-web/package-lock.json
+
+      - name: Install citizen web dependencies
+        run: npm ci
+
+      - name: Test citizen web contracts
+        run: npm test
+
+      - name: Lint citizen web
+        run: npm run lint
+
+      - name: Build citizen web
+        run: npm run build
