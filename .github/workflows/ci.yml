@@ -89,3 +89,11 @@ jobs:
 
       - name: Test API
         run: python -m pytest
+
+      - name: Validate database migrations
+        env:
+          DATABASE_URL: sqlite:///./ci-migrations.db
+        run: |
+          python -m alembic upgrade head
+          test -f ci-migrations.db
+          rm ci-migrations.db
