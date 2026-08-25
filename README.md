@@ -25,6 +25,8 @@ The service exposes `GET /health` and returns a versioned service status. Compla
 
 The AI package currently provides a deterministic, explainable complaint classifier for worker use. It returns structured sector, issue, severity, financial-impact, evidence, duplicate-hint, confidence, and provenance fields; it is advisory and does not run on the complaint acknowledgement path.
 
+The same package provides a provider-replaceable 128-dimensional deterministic embedding baseline and cosine similarity contract. It fingerprints normalized text for traceability without returning the source complaint text; a production semantic model and pgvector persistence remain later milestones.
+
 Submit a complaint with `POST /api/v1/complaints` using a description and exactly one tracking contact (`email` or `phone`). The response returns a non-sequential docket immediately. Track it with `POST /api/v1/complaints/track`; tracking requires the docket and the same contact, and returns a plain-language status timeline without private complaint content.
 
 Submission writes the private case, initial status event, and versioned `complaint.created.v1` outbox event in one transaction. The outbox is the handoff for future asynchronous processing; AI, OCR, clustering, routing, and notifications do not block acknowledgement.
