@@ -6,6 +6,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from services.api.app.complaints import ComplaintNotFoundError
+from services.api.app.issue_routes import router as issue_router
+from services.api.app.issues import IssueNotFoundError
 from services.api.app.routes import router as complaint_router
 
 
@@ -21,6 +23,7 @@ app = FastAPI(
     version="0.1.0",
 )
 app.include_router(complaint_router)
+app.include_router(issue_router)
 
 
 @app.exception_handler(ComplaintNotFoundError)
@@ -33,6 +36,21 @@ async def complaint_not_found_handler(
             "error": {
                 "code": "COMPLAINT_NOT_FOUND",
                 "message": "Complaint could not be found",
+            }
+        },
+    )
+
+
+@app.exception_handler(IssueNotFoundError)
+async def issue_not_found_handler(
+    request: Request, exc: IssueNotFoundError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": {
+                "code": "ISSUE_NOT_FOUND",
+                "message": "Issue could not be found",
             }
         },
     )
