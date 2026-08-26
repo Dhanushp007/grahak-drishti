@@ -35,6 +35,8 @@ The issue signal API exposes `GET /api/v1/issues/{cluster_key}` for aggregate-on
 
 Gate 6 provides advisory dark-pattern analysis for evidence text and deterministic consumer-navigation recommendations. Results use “Potential dark pattern detected” language, include evidence and guidance, and never establish a legal violation or binding regulatory action.
 
+Gate 7 includes a synthetic queue simulation for 100, 1,000, 10,000, and 100,000 events. It reports producer time, processing throughput, peak queue depth, worker distribution, and queue-drain status; these are local demonstration metrics, not production capacity guarantees.
+
 Submit a complaint with `POST /api/v1/complaints` using a description and exactly one tracking contact (`email` or `phone`). The response returns a non-sequential docket immediately. Track it with `POST /api/v1/complaints/track`; tracking requires the docket and the same contact, and returns a plain-language status timeline without private complaint content.
 
 Submission writes the private case, initial status event, and versioned `complaint.created.v1` outbox event in one transaction. The outbox is the handoff for future asynchronous processing; AI, OCR, clustering, routing, and notifications do not block acknowledgement.

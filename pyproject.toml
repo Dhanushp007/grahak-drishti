@@ -30,6 +30,7 @@ testpaths = [
     "services/clustering_worker/tests",
     "services/ai/tests",
     "services/routing_engine/tests",
+    "scripts/tests",
 ]
 pythonpath = ["."]
 
