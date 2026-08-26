@@ -235,6 +235,12 @@ h2 { font-size: 2rem; font-weight: 600; line-height: 1.1; }
 .demo-strip, .topbar-nav a, .wordmark, .quiet-label, .required-note, .optional, .field-hint, .form-footnote, .page-footer, .success-copy, label, legend, input, textarea, select, .eyebrow, .trust-note, .submit-button, .primary-button, .field-error, .submission-error, .evidence-row strong, .evidence-row p, .docket-box span, .docket-box strong, .text-button, .analysis-result p:not(.eyebrow), .analysis-pending, .analysis-link, .back-link, .result-status, .timeline-list strong, .timeline-list p, .issue-list-item p:not(.eyebrow), .issue-list-stats, .issue-subtitle, .issue-tags span, .metric-grid strong, .metric-grid span, .signal-score strong, .signal-score span, .signal-score p:last-child, .signal-action p:not(.eyebrow), .icon-button, .corroboration-form label, .evidence-confirmation strong, .evidence-confirmation span, .issue-disclaimer, .issue-state { font-family: var(--font-body); }
 .page-shell { max-width: 1320px; padding: 30px 56px 26px; }
 .topbar { min-height: 54px; padding-bottom: 18px; }
+.topbar-actions { align-items: center; display: flex; gap: 22px; }
+.demo-login-button, .demo-session { align-items: center; display: inline-flex; font-family: var(--font-body); font-size: 11px; gap: 6px; }
+.demo-login-button { background: var(--ink); border: 0; border-radius: 5px; color: white; cursor: pointer; min-height: 36px; padding: 0 12px; }
+.demo-login-button:hover { background: var(--teal); }
+.demo-session { color: var(--teal); font-weight: 600; }
+.demo-login-error { color: var(--coral-dark); font-family: var(--font-body); font-size: 11px; margin: 12px 0 -22px; text-align: right; }
 .topbar-nav { gap: 28px; }
 .topbar-nav a { font-size: 12px; font-weight: 600; }
 .wordmark { font-size: 14px; letter-spacing: .12em; }
@@ -290,6 +296,8 @@ textarea { min-height: 132px; }
   h1 { font-size: 2.8rem; }
   .topbar-nav { gap: 13px; }
   .topbar-nav a { font-size: 10px; }
+  .topbar-actions { gap: 10px; }
+  .demo-login-button { font-size: 10px; padding: 0 9px; }
   .form-card { padding: 24px 18px; }
   .success-panel h1 { font-size: 2.65rem; }
 }
