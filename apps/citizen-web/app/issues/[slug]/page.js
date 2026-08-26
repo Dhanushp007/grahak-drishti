@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, LoaderCircle, MapPin, RotateCcw, Share2, Users } from "lucide-react";
+import { ArrowLeft, Check, FileCheck2, LoaderCircle, MapPin, RotateCcw, Share2, Users } from "lucide-react";
 import { useParams } from "next/navigation";
 
-import { confirmPublicIssue, fetchPublicIssue } from "../../../lib/issues.js";
+import { fetchPublicIssue, startPublicCorroboration, submitCorroborationEvidence } from "../../../lib/issues.js";
 
 export default function PublicIssuePage() {
   const params = useParams();
@@ -13,6 +13,10 @@ export default function PublicIssuePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [corroboration, setCorroboration] = useState(null);
+  const [evidenceType, setEvidenceType] = useState("refund/cancellation screenshot");
+  const [filename, setFilename] = useState("");
+  const [explanation, setExplanation] = useState("");
   const clusterKey = decodeURIComponent(params.slug);
 
   useEffect(() => {
@@ -31,15 +35,38 @@ export default function PublicIssuePage() {
     }
   }
 
-  async function confirmExperience() {
-    if (hasConfirmed) return;
+  async function startExperience() {
+    if (hasConfirmed || corroboration) return;
     setIsConfirming(true);
+    setError("");
     try {
-      const result = await confirmPublicIssue(clusterKey);
-      setIssue((current) => ({ ...current, confirmations: result.confirmations }));
-      setHasConfirmed(result.recorded || hasConfirmed);
+      const result = await startPublicCorroboration(clusterKey, explanation);
+      setCorroboration(result);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "We could not add your signal.");
+      setError(requestError instanceof Error ? requestError.message : "We could not start your signal.");
+    } finally {
+      setIsConfirming(false);
+    }
+  }
+
+  async function submitEvidence(event) {
+    event.preventDefault();
+    setIsConfirming(true);
+    setError("");
+    try {
+      const result = await submitCorroborationEvidence(corroboration.corroboration_id, {
+        evidence_type: evidenceType,
+        filename: filename.trim() || null,
+      });
+      setIssue((current) => ({
+        ...current,
+        confirmations: result.confirmations,
+        evidence_backed_count: result.evidence_backed_count,
+      }));
+      setHasConfirmed(true);
+      setCorroboration({ ...corroboration, ...result });
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "We could not submit the evidence.");
     } finally {
       setIsConfirming(false);
     }
@@ -68,8 +95,26 @@ export default function PublicIssuePage() {
       </section>
       <section className="signal-action">
         <div><p className="eyebrow">Add your signal</p><h2>Did this happen to you too?</h2><p>Your confirmation contributes to an aggregate evidence signal. It does not force government action.</p></div>
-        <div className="action-buttons"><button className="primary-button" type="button" onClick={confirmExperience} disabled={hasConfirmed || isConfirming}>{isConfirming ? <><LoaderCircle className="spin" size={17} /> Adding signal...</> : hasConfirmed ? <><Check size={17} /> Signal added</> : <>I experienced this too <Check size={17} /> </>}</button><button className="icon-button" type="button" aria-label="Share this issue" title="Share this issue"><Share2 size={18} /></button></div>
+        {!corroboration ? (
+          <div className="action-buttons"><button className="primary-button" type="button" onClick={startExperience} disabled={hasConfirmed || isConfirming}>{isConfirming ? <><LoaderCircle className="spin" size={17} /> Starting...</> : hasConfirmed ? <><Check size={17} /> Signal added</> : <>I experienced this too <Check size={17} /> </>}</button><button className="icon-button" type="button" aria-label="Share this issue" title="Share this issue"><Share2 size={18} /></button></div>
+        ) : hasConfirmed ? (
+          <div className="evidence-confirmation"><FileCheck2 size={19} /><div><strong>Demo evidence submitted</strong><span>Recorded for review. It is not legally verified.</span></div></div>
+        ) : (
+          <form className="corroboration-form" onSubmit={submitEvidence}>
+            <p className="field-hint">Supporting proof helps distinguish a corroborated report from a blind vote.</p>
+            <label htmlFor="evidenceType">What proof do you have?</label>
+            <select id="evidenceType" value={evidenceType} onChange={(event) => setEvidenceType(event.target.value)}>
+              <option>invoice / bill</option><option>order screenshot</option><option>refund/cancellation screenshot</option><option>email/message screenshot</option><option>warranty document</option><option>photo/video</option><option>other supporting proof</option>
+            </select>
+            <label htmlFor="filename">Demo file name <span className="optional">(optional)</span></label>
+            <input id="filename" value={filename} onChange={(event) => setFilename(event.target.value)} placeholder="for example: refund-confirmation.png" />
+            <label htmlFor="explanation">Short explanation <span className="optional">(optional)</span></label>
+            <textarea id="explanation" value={explanation} onChange={(event) => setExplanation(event.target.value)} placeholder="What does this proof show?" rows="3" />
+            <button className="primary-button" type="submit" disabled={isConfirming}>{isConfirming ? <><LoaderCircle className="spin" size={17} /> Recording...</> : <>Submit demo evidence <FileCheck2 size={17} /></>}</button>
+          </form>
+        )}
       </section>
+      {error && <p className="submission-error issue-action-error" role="alert">{error}</p>}
       <p className="issue-disclaimer">Reported complaints are allegations until verified or resolved. This public page contains aggregate demo data and no individual consumer records.</p>
     </main>
   );

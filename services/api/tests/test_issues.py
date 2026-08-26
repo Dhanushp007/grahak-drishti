@@ -78,26 +78,60 @@ def test_public_issue_list_is_aggregate_only(issue_client: TestClient) -> None:
     assert "member_ids" not in response.json()[0]
 
 
-def test_confirmation_is_idempotent_for_the_same_key(issue_client: TestClient) -> None:
+def test_blind_confirmation_requires_supporting_evidence(
+    issue_client: TestClient,
+) -> None:
     path = "/api/v1/issues/REFUND-DELAY-EXAMPLE-SELLER/confirm"
-    first = issue_client.post(
-        path, headers={"X-Confirmation-Key": "browser-confirmation-1"}
-    )
-    second = issue_client.post(
+    response = issue_client.post(
         path, headers={"X-Confirmation-Key": "browser-confirmation-1"}
     )
 
-    assert first.status_code == second.status_code == 200
-    assert first.json() == {
-        "cluster_key": "REFUND-DELAY-EXAMPLE-SELLER",
-        "confirmations": 9,
-        "recorded": True,
+    assert response.status_code == 409
+    assert response.json() == {
+        "error": {
+            "code": "CORROBORATION_REQUIRED",
+            "message": "Submit supporting evidence before adding a consumer signal.",
+        }
     }
-    assert second.json() == {
-        "cluster_key": "REFUND-DELAY-EXAMPLE-SELLER",
-        "confirmations": 9,
-        "recorded": False,
-    }
+
+
+def test_corroboration_updates_metrics_only_after_evidence(
+    issue_client: TestClient,
+) -> None:
+    path = "/api/v1/issues/REFUND-DELAY-EXAMPLE-SELLER"
+    started = issue_client.post(
+        f"{path}/corroborations",
+        json={
+            "confirmation_key": "browser-confirmation-1234",
+            "explanation": "The refund confirmation email is still unresolved.",
+        },
+    )
+
+    assert started.status_code == 200
+    assert started.json()["status"] == "pending_evidence"
+    assert started.json()["evidence_required"] is True
+
+    corroboration_id = started.json()["corroboration_id"]
+    evidence = issue_client.post(
+        f"/api/v1/issues/corroborations/{corroboration_id}/evidence",
+        json={
+            "evidence_type": "refund/cancellation screenshot",
+            "filename": "demo-refund.png",
+        },
+    )
+
+    assert evidence.status_code == 200
+    assert evidence.json()["status"] == "accepted_for_signal"
+    assert evidence.json()["validation_status"] == "pending-review"
+    assert evidence.json()["confirmations"] == 9
+    assert evidence.json()["evidence_backed_count"] == 1
+
+    duplicate = issue_client.post(
+        f"/api/v1/issues/corroborations/{corroboration_id}/evidence",
+        json={"evidence_type": "refund/cancellation screenshot"},
+    )
+    assert duplicate.status_code == 200
+    assert duplicate.json()["recorded"] is False
 
 
 def test_unknown_issue_returns_the_same_safe_not_found_error(
@@ -112,3 +146,42 @@ def test_unknown_issue_returns_the_same_safe_not_found_error(
             "message": "Issue could not be found",
         }
     }
+
+
+def test_golden_complaint_matches_an_issue_and_dashboard(
+    issue_client: TestClient,
+) -> None:
+    created = issue_client.post(
+        "/api/v1/complaints",
+        json={
+            "description": (
+                "I cancelled my QuickKart order 12 days ago. The refund of INR "
+                "3499 was confirmed but I still have not received it."
+            ),
+            "company_name": "QuickKart",
+            "amount_involved": "3499.00",
+            "contact": {"email": "golden@example.com"},
+        },
+    )
+    assert created.status_code == 201
+
+    intelligence = issue_client.post(
+        "/api/v1/complaints/intelligence",
+        json={
+            "docket_number": created.json()["docket_number"],
+            "contact": {"email": "GOLDEN@example.com"},
+        },
+    )
+    assert intelligence.status_code == 200
+    assert (
+        intelligence.json()["analysis"]["classification"]["issue"]["value"]
+        == "refund_delay"
+    )
+    assert (
+        intelligence.json()["matched_issue"]["cluster_key"]
+        == "REFUND-DELAY-EXAMPLE-SELLER"
+    )
+
+    overview = issue_client.get("/api/v1/dashboard/overview")
+    assert overview.status_code == 200
+    assert overview.json()["data_label"] == "Synthetic demonstration data"

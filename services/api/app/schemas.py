@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from services.api.app.issue_schemas import PublicIssueResponse
+
 
 class ContactInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -81,3 +83,11 @@ class ComplaintTracking(BaseModel):
     status: str
     submitted_at: datetime
     timeline: list[TimelineEvent]
+
+
+class ComplaintIntelligenceResponse(BaseModel):
+    docket_number: str
+    status: str
+    analyzed_at: datetime
+    analysis: dict[str, object]
+    matched_issue: PublicIssueResponse | None = None

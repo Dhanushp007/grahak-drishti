@@ -23,6 +23,7 @@ body {
   font-family: Georgia, "Times New Roman", serif;
   margin: 0;
 }
+.demo-strip { background: var(--ink); color: #d7e4dd; font-family: Arial, sans-serif; font-size: 10px; letter-spacing: .08em; padding: 8px 20px; text-align: center; text-transform: uppercase; }
 
 button, input, textarea { font: inherit; }
 
@@ -40,6 +41,8 @@ a { color: inherit; }
 .topbar, .page-footer { align-items: center; display: flex; justify-content: space-between; }
 
 .topbar { border-bottom: 1px solid var(--line); padding-bottom: 22px; }
+.topbar-nav { align-items: center; display: flex; gap: 20px; }
+.topbar-nav a { color: var(--teal); font-family: Arial, sans-serif; font-size: 11px; font-weight: 700; text-decoration: none; }
 
 .wordmark { font-family: Arial, sans-serif; font-size: 15px; font-weight: 800; letter-spacing: .08em; text-decoration: none; }
 .wordmark span { color: var(--coral); }
@@ -62,6 +65,7 @@ h2 { font-size: 34px; }
 label, legend { display: block; font-family: Arial, sans-serif; font-size: 12px; font-weight: 700; margin-bottom: 9px; }
 label span, legend span { color: var(--coral); }
 input, textarea { background: #fcfcfa; border: 1px solid #cbd4cc; border-radius: 0; color: var(--ink); outline: none; padding: 13px 14px; transition: border-color .2s, box-shadow .2s; width: 100%; }
+select { background: #fcfcfa; border: 1px solid #cbd4cc; border-radius: 0; color: var(--ink); outline: none; padding: 13px 14px; width: 100%; }
 textarea { line-height: 1.5; resize: vertical; }
 input:focus, textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(23,108,104,.13); }
 input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--coral); }
@@ -79,9 +83,9 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .contact-fields { border: 0; margin: 0 0 4px; padding: 0; }
 .contact-fields legend { padding: 0; }
 .field-hint { margin: -3px 0 18px; }
-.submit-button, .primary-button { align-items: center; background: var(--coral); border: 0; color: white; cursor: pointer; display: inline-flex; font-family: Arial, sans-serif; font-size: 13px; font-weight: 700; gap: 11px; justify-content: center; min-height: 50px; padding: 0 22px; text-decoration: none; transition: background .2s, transform .2s; }
+.submit-button, .primary-button { align-items: center; background: var(--coral); border: 0; color: white; cursor: pointer; display: inline-flex; font-family: Arial, sans-serif; font-size: 13px; font-weight: 700; gap: 11px; justify-content: center; min-height: 50px; padding: 0 22px; text-decoration: none; transition: background .2s; }
 .submit-button { margin-top: 22px; width: 100%; }
-.submit-button:hover, .primary-button:hover { background: var(--coral-dark); transform: translateY(-2px); }
+.submit-button:hover, .primary-button:hover { background: var(--coral-dark); }
 .submit-button:disabled { cursor: wait; opacity: .7; transform: none; }
 .form-footnote { line-height: 1.45; margin: 14px auto 0; max-width: 400px; text-align: center; }
 .spin { animation: spin 1s linear infinite; }
@@ -99,6 +103,12 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .docket-box span { color: #a6bbb2; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
 .docket-box strong { font-size: 27px; letter-spacing: .08em; margin-top: 7px; }
 .text-button { background: none; border: 0; color: var(--teal); cursor: pointer; display: block; font-family: Arial, sans-serif; font-size: 12px; margin: 25px auto 0; padding: 4px; text-decoration: underline; }
+.analysis-result { background: var(--mint); margin: 36px 0 0; padding: 20px; text-align: left; }
+.analysis-result h2 { font-size: 25px; }
+.analysis-result p:not(.eyebrow), .analysis-pending { color: var(--muted); font-family: Arial, sans-serif; font-size: 11px; line-height: 1.5; }
+.analysis-result p:not(.eyebrow) { margin: 8px 0 13px; }
+.analysis-link { align-items: center; color: var(--teal); display: inline-flex; font-family: Arial, sans-serif; font-size: 11px; font-weight: 700; gap: 6px; text-decoration: none; }
+.analysis-pending { display: block; margin: 22px 0 0; }
 .back-link { align-items: center; color: var(--teal); display: inline-flex; font-family: Arial, sans-serif; font-size: 12px; gap: 7px; text-decoration: none; }
 .tracking-shell { align-items: stretch; display: flex; flex-direction: column; }
 .tracking-layout { align-items: start; display: grid; gap: clamp(48px, 9vw, 132px); grid-template-columns: minmax(260px, .8fr) minmax(420px, 1fr); margin: auto 7%; padding: 80px 0; width: auto; }
@@ -149,6 +159,15 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .action-buttons { align-items: center; display: flex; flex: 0 0 auto; gap: 10px; }
 .icon-button { align-items: center; background: transparent; border: 1px solid var(--line); color: var(--teal); cursor: pointer; display: inline-flex; height: 50px; justify-content: center; width: 50px; }
 .icon-button:hover { border-color: var(--teal); }
+.corroboration-form { display: grid; gap: 9px; max-width: 390px; min-width: min(100%, 320px); }
+.corroboration-form .field-hint { margin: 0 0 8px; }
+.corroboration-form label { margin: 7px 0 0; }
+.corroboration-form .primary-button { margin-top: 9px; }
+.evidence-confirmation { align-items: flex-start; background: var(--mint); color: var(--teal); display: flex; gap: 10px; max-width: 330px; padding: 16px; }
+.evidence-confirmation strong, .evidence-confirmation span { display: block; font-family: Arial, sans-serif; }
+.evidence-confirmation strong { font-size: 12px; }
+.evidence-confirmation span { color: var(--muted); font-size: 11px; line-height: 1.4; margin-top: 5px; }
+.issue-action-error { margin: 18px 7% 0; }
 .issue-disclaimer { color: var(--muted); font-family: Arial, sans-serif; font-size: 11px; line-height: 1.5; margin: 36px 7% 70px; max-width: 620px; }
 .issue-state { align-items: center; color: var(--muted); display: flex; font-family: Arial, sans-serif; font-size: 13px; gap: 10px; min-height: 100px; }
 .issue-state-error { color: var(--coral-dark); justify-content: space-between; }
@@ -164,6 +183,7 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
   .issue-detail-grid { display: block; }
   .signal-score { margin-bottom: 18px; }
   .signal-action { align-items: flex-start; flex-direction: column; margin-left: 0; margin-right: 0; }
+  .corroboration-form { max-width: none; min-width: 0; width: 100%; }
   .issue-disclaimer { margin-left: 0; margin-right: 0; }
 }
 
@@ -172,6 +192,7 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 @media (max-width: 800px) {
   .page-shell { padding: 20px 20px 18px; }
   .quiet-label { display: none; }
+  .topbar-nav { gap: 12px; }
   .hero-grid { display: block; padding: 58px 0 54px; }
   .hero-copy { padding: 0 4px 48px; }
   h1 { font-size: clamp(48px, 15vw, 70px); }
