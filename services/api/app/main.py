@@ -6,6 +6,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from services.api.app.complaints import ComplaintNotFoundError
+from services.api.app.dashboard_routes import router as dashboard_router
+from services.api.app.demo_routes import router as demo_router
+from services.api.app.intelligence import CorroborationNotFoundError
 from services.api.app.issue_routes import router as issue_router
 from services.api.app.issues import IssueNotFoundError
 from services.api.app.routes import router as complaint_router
@@ -24,6 +27,8 @@ app = FastAPI(
 )
 app.include_router(complaint_router)
 app.include_router(issue_router)
+app.include_router(dashboard_router)
+app.include_router(demo_router)
 
 
 @app.exception_handler(ComplaintNotFoundError)
@@ -51,6 +56,21 @@ async def issue_not_found_handler(
             "error": {
                 "code": "ISSUE_NOT_FOUND",
                 "message": "Issue could not be found",
+            }
+        },
+    )
+
+
+@app.exception_handler(CorroborationNotFoundError)
+async def corroboration_not_found_handler(
+    request: Request, exc: CorroborationNotFoundError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": {
+                "code": "CORROBORATION_NOT_FOUND",
+                "message": "Corroboration could not be found",
             }
         },
     )

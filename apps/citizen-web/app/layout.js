@@ -8,7 +8,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><div className="demo-strip">Demo environment · synthetic data only</div>{children}</body>
     </html>
   );
 }

@@ -18,6 +18,7 @@ export default function HomePage() {
   const [errors, setErrors] = useState({});
   const [submissionError, setSubmissionError] = useState("");
   const [submission, setSubmission] = useState(null);
+  const [intelligence, setIntelligence] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function updateField(event) {
@@ -35,6 +36,7 @@ export default function HomePage() {
     if (Object.keys(validationErrors).length > 0) return;
 
     setIsSubmitting(true);
+    setIntelligence(null);
     try {
       const response = await fetch("/api/backend/api/v1/complaints", {
         method: "POST",
@@ -46,6 +48,7 @@ export default function HomePage() {
         throw new Error(body?.error?.message || "We could not submit your report.");
       }
       setSubmission(body);
+      void loadIntelligence(body.docket_number, buildComplaintPayload(form).contact);
     } catch (error) {
       setSubmissionError(
         error instanceof Error
@@ -57,6 +60,19 @@ export default function HomePage() {
     }
   }
 
+  async function loadIntelligence(docketNumber, contact) {
+    try {
+      const response = await fetch("/api/backend/api/v1/complaints/intelligence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ docket_number: docketNumber, contact }),
+      });
+      if (response.ok) setIntelligence(await response.json());
+    } catch {
+      setIntelligence(null);
+    }
+  }
+
   if (submission) {
     return (
       <main className="page-shell success-shell">
@@ -64,7 +80,7 @@ export default function HomePage() {
           <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
             GRAHAK<span>-</span>DRISHTI
           </a>
-          <span className="quiet-label">Consumer protection intelligence</span>
+          <nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/track">Track a report</a></nav>
         </header>
         <section className="success-panel" aria-labelledby="success-title">
           <div className="success-icon" aria-hidden="true"><Check size={28} /></div>
@@ -80,6 +96,15 @@ export default function HomePage() {
           <a className="primary-button" href={`/track?docket=${submission.docket_number}`}>
             Track this report <ArrowRight size={18} />
           </a>
+          {intelligence ? (
+            <section className="analysis-result" aria-live="polite">
+              <p className="eyebrow">Advisory intelligence</p>
+              <h2>{intelligence.analysis?.classification?.issue?.value || "Issue pattern identified"}</h2>
+              <p>We organized your report so similar consumer experiences can be seen together.</p>
+              {intelligence.matched_issue ? <a href={`/issues/${intelligence.matched_issue.cluster_key}`} className="analysis-link">See {intelligence.matched_issue.reported_count.toLocaleString()} similar reports <ArrowRight size={15} /></a> : <span className="analysis-pending">No matching public issue signal yet.</span>}
+              <span className="analysis-pending">Routing is advisory and does not replace existing grievance systems.</span>
+            </section>
+          ) : <p className="analysis-pending" aria-live="polite">Preparing your advisory issue summary...</p>}
           <button className="text-button" type="button" onClick={() => setSubmission(null)}>
             Report another issue
           </button>
@@ -94,7 +119,7 @@ export default function HomePage() {
         <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
           GRAHAK<span>-</span>DRISHTI
         </a>
-        <span className="quiet-label">Consumer protection intelligence</span>
+        <nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/track">Track a report</a></nav>
       </header>
 
       <section className="hero-grid">

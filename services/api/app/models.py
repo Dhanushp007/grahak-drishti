@@ -119,6 +119,12 @@ class IssueClusterRecord(Base):
     confirmations: Mapped[int] = mapped_column(
         nullable=False, default=0, server_default="0"
     )
+    evidence_backed_count: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
+    reviewed_count: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
     total_reported_amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
     states_affected: Mapped[int] = mapped_column(
         nullable=False, default=0, server_default="0"
@@ -138,6 +144,9 @@ class IssueClusterRecord(Base):
     last_reported_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
+    trend: Mapped[list[dict[str, object]] | None] = mapped_column(JSON)
+    geography: Mapped[list[dict[str, object]] | None] = mapped_column(JSON)
+    routing: Mapped[dict[str, object] | None] = mapped_column(JSON)
 
 
 class ConsumerConfirmation(Base):
@@ -157,5 +166,71 @@ class ConsumerConfirmation(Base):
     )
     confirmation_digest: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class ComplaintAnalysisRecord(Base):
+    __tablename__ = "complaint_analyses"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    complaint_id: Mapped[str] = mapped_column(
+        ForeignKey("complaints.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    cluster_key: Mapped[str | None] = mapped_column(String(160))
+    analysis: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    analyzed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class CorroborationRecord(Base):
+    __tablename__ = "corroborations"
+    __table_args__ = (
+        UniqueConstraint(
+            "cluster_id",
+            "confirmation_digest",
+            name="uq_corroborations_cluster_digest",
+        ),
+        Index("ix_corroborations_cluster", "cluster_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    cluster_id: Mapped[str] = mapped_column(
+        ForeignKey("issue_clusters.cluster_id", ondelete="CASCADE"), nullable=False
+    )
+    confirmation_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    explanation: Mapped[str | None] = mapped_column(String(500))
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="pending_evidence",
+        server_default="pending_evidence",
+    )
+    submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class EvidenceRecord(Base):
+    __tablename__ = "evidence_records"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    corroboration_id: Mapped[str] = mapped_column(
+        ForeignKey("corroborations.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    evidence_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    filename: Mapped[str | None] = mapped_column(String(200))
+    synthetic_flag: Mapped[bool] = mapped_column(
+        nullable=False, default=True, server_default="1"
+    )
+    validation_status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="pending-review",
+        server_default="pending-review",
+    )
+    review_note: Mapped[str | None] = mapped_column(String(300))
+    submitted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )

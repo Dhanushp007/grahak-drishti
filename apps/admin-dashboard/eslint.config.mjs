@@ -11,7 +11,7 @@ export default defineConfig([
       ecmaVersion: "latest",
       sourceType: "module",
       parserOptions: { ecmaFeatures: { jsx: true } },
-      globals: { document: "readonly", window: "readonly" },
+      globals: { document: "readonly", fetch: "readonly", window: "readonly" },
     },
     plugins: { react },
     settings: { react: { version: "detect" } },

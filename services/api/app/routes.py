@@ -5,9 +5,12 @@ from sqlalchemy.orm import Session
 
 from services.api.app.complaints import create_complaint, track_complaint
 from services.api.app.db import get_db
+from services.api.app.intelligence import analyze_complaint
+from services.api.app.issue_schemas import PublicIssueResponse
 from services.api.app.schemas import (
     ComplaintCreate,
     ComplaintCreated,
+    ComplaintIntelligenceResponse,
     ComplaintTracking,
     TimelineEvent,
     TrackingRequest,
@@ -50,4 +53,21 @@ def track_submitted_complaint(
             )
             for event in events
         ],
+    )
+
+
+@router.post("/intelligence", response_model=ComplaintIntelligenceResponse)
+def read_complaint_intelligence(
+    payload: TrackingRequest, session: Annotated[Session, Depends(get_db)]
+) -> ComplaintIntelligenceResponse:
+    complaint, _ = track_complaint(session, payload)
+    record, cluster = analyze_complaint(session, complaint)
+    return ComplaintIntelligenceResponse(
+        docket_number=complaint.docket_number,
+        status=complaint.status,
+        analyzed_at=record.analyzed_at,
+        analysis=record.analysis,
+        matched_issue=PublicIssueResponse.model_validate(cluster)
+        if cluster is not None
+        else None,
     )

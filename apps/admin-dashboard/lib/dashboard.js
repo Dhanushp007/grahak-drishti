@@ -22,6 +22,25 @@ export const dashboardSnapshot = {
   ],
 };
 
+async function readJson(response) {
+  const body = await response.json();
+  if (!response.ok) throw new Error(body?.error?.message || "Dashboard data is unavailable right now.");
+  return body;
+}
+
+export async function fetchDashboardOverview() {
+  return readJson(await fetch("/api/backend/api/v1/dashboard/overview", { cache: "no-store" }));
+}
+
+export async function fetchDashboardGeography(issue = "") {
+  const suffix = issue ? `?issue=${encodeURIComponent(issue)}` : "";
+  return readJson(await fetch(`/api/backend/api/v1/dashboard/geography${suffix}`, { cache: "no-store" }));
+}
+
+export async function fetchDashboardIssue(clusterKey) {
+  return readJson(await fetch(`/api/backend/api/v1/dashboard/issues/${encodeURIComponent(clusterKey)}`, { cache: "no-store" }));
+}
+
 export function dashboardSummary(snapshot = dashboardSnapshot) {
   return {
     totalKpis: snapshot.kpis.length,

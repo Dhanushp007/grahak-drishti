@@ -37,3 +37,26 @@ function getConfirmationKey() {
   }
   return key;
 }
+
+export async function startPublicCorroboration(clusterKey, explanation = "") {
+  return readJson(
+    await fetch(`${API_PREFIX}/${encodeURIComponent(clusterKey)}/corroborations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        confirmation_key: getConfirmationKey(),
+        explanation: explanation.trim() || null,
+      }),
+    }),
+  );
+}
+
+export async function submitCorroborationEvidence(corroborationId, evidence) {
+  return readJson(
+    await fetch(`${API_PREFIX}/corroborations/${encodeURIComponent(corroborationId)}/evidence`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(evidence),
+    }),
+  );
+}
