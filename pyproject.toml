@@ -28,6 +28,8 @@ testpaths = [
     "services/api/tests",
     "services/ai/tests",
     "services/clustering_worker/tests",
+    "services/ai/tests",
+    "services/routing_engine/tests",
 ]
 pythonpath = ["."]
 

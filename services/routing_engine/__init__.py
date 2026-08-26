@@ -1,0 +1,1 @@
+"""Deterministic consumer navigation and routing capabilities."""

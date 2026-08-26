@@ -82,10 +82,10 @@ jobs:
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
 
       - name: Lint API
-        run: python -m ruff check services/api services/ai services/clustering_worker scripts/api_smoke_test.py
+        run: python -m ruff check services/api services/ai services/clustering_worker services/routing_engine scripts/api_smoke_test.py
 
       - name: Type check API
-        run: python -m mypy services/api/app services/ai/app services/clustering_worker/app scripts/api_smoke_test.py
+        run: python -m mypy services/api/app services/ai/app services/clustering_worker/app services/routing_engine/app scripts/api_smoke_test.py
 
       - name: Test API
         run: python -m pytest
