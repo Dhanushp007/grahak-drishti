@@ -33,6 +33,8 @@ The consumer signal module applies the PRD weights for affected consumers, growt
 
 The issue signal API exposes `GET /api/v1/issues/{cluster_key}` for aggregate-only issue reads and `POST /api/v1/issues/{cluster_key}/confirm` with an `X-Confirmation-Key` header for idempotent consumer confirmations. Confirmation keys are hashed before storage; no contact details or complaint narratives are returned.
 
+Gate 6 provides advisory dark-pattern analysis for evidence text and deterministic consumer-navigation recommendations. Results use “Potential dark pattern detected” language, include evidence and guidance, and never establish a legal violation or binding regulatory action.
+
 Submit a complaint with `POST /api/v1/complaints` using a description and exactly one tracking contact (`email` or `phone`). The response returns a non-sequential docket immediately. Track it with `POST /api/v1/complaints/track`; tracking requires the docket and the same contact, and returns a plain-language status timeline without private complaint content.
 
 Submission writes the private case, initial status event, and versioned `complaint.created.v1` outbox event in one transaction. The outbox is the handoff for future asynchronous processing; AI, OCR, clustering, routing, and notifications do not block acknowledgement.
