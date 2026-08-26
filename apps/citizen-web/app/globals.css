@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -207,4 +208,88 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
   .form-card-heading { display: block; }
   .required-note { display: block; margin-top: 12px; padding: 0; }
   .success-panel { padding: 70px 4px; }
+}
+
+:root {
+  --font-body: "DM Sans", "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Trebuchet MS", sans-serif;
+  --font-number: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --paper: #f7f8f4;
+  --card: #ffffff;
+  --line: #d6ded7;
+  --ink: #18251f;
+  --muted: #627169;
+  --mint: #dcefe7;
+}
+
+body {
+  background: radial-gradient(circle at 15% 0%, rgba(220, 239, 231, .68), transparent 30rem), var(--paper);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0; }
+h1 { font-size: 4.6rem; font-weight: 500; line-height: 1.02; }
+h2 { font-size: 2rem; font-weight: 600; line-height: 1.1; }
+.demo-strip, .topbar-nav a, .wordmark, .quiet-label, .required-note, .optional, .field-hint, .form-footnote, .page-footer, .success-copy, label, legend, input, textarea, select, .eyebrow, .trust-note, .submit-button, .primary-button, .field-error, .submission-error, .evidence-row strong, .evidence-row p, .docket-box span, .docket-box strong, .text-button, .analysis-result p:not(.eyebrow), .analysis-pending, .analysis-link, .back-link, .result-status, .timeline-list strong, .timeline-list p, .issue-list-item p:not(.eyebrow), .issue-list-stats, .issue-subtitle, .issue-tags span, .metric-grid strong, .metric-grid span, .signal-score strong, .signal-score span, .signal-score p:last-child, .signal-action p:not(.eyebrow), .icon-button, .corroboration-form label, .evidence-confirmation strong, .evidence-confirmation span, .issue-disclaimer, .issue-state { font-family: var(--font-body); }
+.page-shell { max-width: 1320px; padding: 30px 56px 26px; }
+.topbar { min-height: 54px; padding-bottom: 18px; }
+.topbar-nav { gap: 28px; }
+.topbar-nav a { font-size: 12px; font-weight: 600; }
+.wordmark { font-size: 14px; letter-spacing: .12em; }
+.hero-grid { gap: 9vw; grid-template-columns: minmax(280px, .86fr) minmax(420px, 1fr); padding: 92px 6% 88px; }
+.hero-copy { padding-top: 38px; }
+.hero-copy h1 { max-width: 510px; }
+.intro { color: #50625a; font-size: 18px; line-height: 1.65; margin-top: 26px; max-width: 410px; }
+.eyebrow { font-size: 10px; letter-spacing: .16em; margin-bottom: 15px; }
+.trust-note { font-size: 12px; line-height: 1.6; margin-top: 48px; }
+.form-card { border-radius: 8px; box-shadow: 12px 12px 0 var(--mint); padding: 38px; }
+.form-card-heading { margin-bottom: 30px; padding-bottom: 20px; }
+.form-card-heading h2 { margin-top: 8px; }
+.field-group { margin-bottom: 20px; }
+label, legend { font-size: 11px; letter-spacing: .02em; }
+input, textarea, select { background: #fbfcfa; border-color: #c5d1c8; border-radius: 5px; font-size: 14px; min-height: 48px; padding: 12px 14px; }
+textarea { min-height: 132px; }
+.two-column-fields { gap: 18px; }
+.evidence-row { border-radius: 6px; margin: 28px 0 30px; padding: 15px; }
+.evidence-icon { border-radius: 5px; }
+.submit-button, .primary-button { border-radius: 5px; font-size: 12px; min-height: 50px; }
+.page-footer { padding-top: 20px; }
+.success-panel { max-width: 590px; padding: 76px 0 90px; }
+.success-panel h1 { font-size: 4rem; }
+.docket-box { border-radius: 6px; padding: 19px; }
+.analysis-result { border: 1px solid #c7ded3; border-radius: 6px; margin-top: 32px; padding: 22px; }
+.issues-heading { margin-top: 82px; }
+.issues-heading h1, .issue-hero h1 { max-width: 760px; }
+.issue-list-item { border-color: var(--line); gap: 34px; padding: 30px 14px; }
+.issue-list-item:hover { padding-left: 22px; padding-right: 22px; }
+.issue-list-item h2 { font-size: 1.8rem; font-weight: 600; }
+.issue-detail-grid { gap: 20px; }
+.signal-score { border-radius: 8px; padding: 32px; }
+.metric-grid { gap: 8px; }
+.metric-grid > div { border-radius: 6px; padding: 22px; }
+.signal-action { gap: 40px; padding: 36px 0; }
+.signal-action h2 { font-size: 2rem; }
+.corroboration-form { gap: 10px; }
+.corroboration-form .primary-button { margin-top: 12px; }
+.evidence-confirmation { border-radius: 6px; }
+.docket-box strong, .issue-list-stats strong, .signal-score strong, .metric-grid strong { font-family: var(--font-number); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+
+@media (max-width: 800px) {
+  h1 { font-size: 3.25rem; }
+  .page-shell { padding: 20px 22px 18px; }
+  .hero-grid { padding: 60px 0 58px; }
+  .hero-copy { padding: 0 5px 42px; }
+  .form-card { box-shadow: 8px 8px 0 var(--mint); padding: 26px 22px; }
+  .success-panel h1 { font-size: 3.15rem; }
+  .issue-list-item { padding-left: 0; padding-right: 0; }
+}
+
+@media (max-width: 500px) {
+  h1 { font-size: 2.8rem; }
+  .topbar-nav { gap: 13px; }
+  .topbar-nav a { font-size: 10px; }
+  .form-card { padding: 24px 18px; }
+  .success-panel h1 { font-size: 2.65rem; }
 }
