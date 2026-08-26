@@ -69,6 +69,15 @@ def test_public_issue_read_excludes_private_fields(issue_client: TestClient) -> 
     assert "description" not in body
 
 
+def test_public_issue_list_is_aggregate_only(issue_client: TestClient) -> None:
+    response = issue_client.get("/api/v1/issues")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["cluster_key"] == "REFUND-DELAY-EXAMPLE-SELLER"
+    assert "member_ids" not in response.json()[0]
+
+
 def test_confirmation_is_idempotent_for_the_same_key(issue_client: TestClient) -> None:
     path = "/api/v1/issues/REFUND-DELAY-EXAMPLE-SELLER/confirm"
     first = issue_client.post(

@@ -8,9 +8,23 @@ from services.api.app.issue_schemas import (
     IssueConfirmationResponse,
     PublicIssueResponse,
 )
-from services.api.app.issues import confirm_issue, get_issue_cluster
+from services.api.app.issues import (
+    confirm_issue,
+    get_issue_cluster,
+    list_issue_clusters,
+)
 
 router = APIRouter(prefix="/api/v1/issues", tags=["issues"])
+
+
+@router.get("", response_model=list[PublicIssueResponse])
+def read_public_issues(
+    session: Annotated[Session, Depends(get_db)],
+) -> list[PublicIssueResponse]:
+    return [
+        PublicIssueResponse.model_validate(cluster)
+        for cluster in list_issue_clusters(session)
+    ]
 
 
 @router.get("/{cluster_key}", response_model=PublicIssueResponse)
