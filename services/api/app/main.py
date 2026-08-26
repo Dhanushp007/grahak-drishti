@@ -12,6 +12,7 @@ from services.api.app.intelligence import CorroborationNotFoundError
 from services.api.app.issue_routes import router as issue_router
 from services.api.app.issues import IssueNotFoundError
 from services.api.app.routes import router as complaint_router
+from services.api.app.storage import EvidenceStorageError
 
 
 class HealthResponse(BaseModel):
@@ -71,6 +72,21 @@ async def corroboration_not_found_handler(
             "error": {
                 "code": "CORROBORATION_NOT_FOUND",
                 "message": "Corroboration could not be found",
+            }
+        },
+    )
+
+
+@app.exception_handler(EvidenceStorageError)
+async def evidence_storage_error_handler(
+    request: Request, exc: EvidenceStorageError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "INVALID_EVIDENCE_FILE",
+                "message": str(exc),
             }
         },
     )

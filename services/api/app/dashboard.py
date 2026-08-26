@@ -38,6 +38,9 @@ def dashboard_overview(session: Session) -> DashboardOverview:
         cluster.issue in {"counterfeit_product", "subscription_issue"}
         for cluster in clusters
     )
+    dark_pattern_reports = sum(
+        cluster.potential_dark_pattern_count for cluster in clusters
+    )
     top_issues = [
         PublicIssueResponse.model_validate(cluster) for cluster in clusters[:5]
     ]
@@ -62,6 +65,12 @@ def dashboard_overview(session: Session) -> DashboardOverview:
                 value=fraud_clusters,
                 change="+2",
                 tone="ink",
+            ),
+            DashboardKpi(
+                label="Potential dark-pattern reports",
+                value=dark_pattern_reports,
+                change="+7",
+                tone="coral",
             ),
         ],
         issues=top_issues,

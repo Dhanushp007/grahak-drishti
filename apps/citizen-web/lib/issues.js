@@ -60,3 +60,15 @@ export async function submitCorroborationEvidence(corroborationId, evidence) {
     }),
   );
 }
+
+export async function submitCorroborationUpload(corroborationId, evidenceType, file) {
+  const formData = new FormData();
+  formData.append("evidence_type", evidenceType);
+  formData.append("upload", file);
+  return readJson(
+    await fetch(`${API_PREFIX}/corroborations/${encodeURIComponent(corroborationId)}/evidence/upload`, {
+      method: "POST",
+      body: formData,
+    }),
+  );
+}

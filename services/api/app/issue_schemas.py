@@ -17,6 +17,7 @@ class PublicIssueResponse(BaseModel):
     confirmations: int = Field(ge=0)
     evidence_backed_count: int = Field(default=0, ge=0)
     reviewed_count: int = Field(default=0, ge=0)
+    potential_dark_pattern_count: int = Field(default=0, ge=0)
     total_reported_amount: Decimal | None
     states_affected: int = Field(ge=0)
     growth_rate: Decimal
@@ -64,3 +65,6 @@ class EvidenceResponse(BaseModel):
     confirmations: int = Field(ge=0)
     evidence_backed_count: int = Field(ge=0)
     recorded: bool
+    synthetic_flag: bool
+    filename: str | None = None
+    file_size_bytes: int | None = None

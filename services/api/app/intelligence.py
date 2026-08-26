@@ -2,12 +2,18 @@ import hashlib
 import hmac
 import re
 from datetime import UTC, datetime
+from decimal import Decimal
 from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from services.ai.app.classifier import ComplaintInput, classify_complaint
+from services.ai.app.classifier import (
+    ComplaintAnalysis,
+    ComplaintInput,
+    classify_complaint,
+)
+from services.ai.app.dark_patterns import analyze_dark_pattern
 from services.api.app.config import get_settings
 from services.api.app.issue_schemas import CorroborationCreate, EvidenceCreate
 from services.api.app.models import (
@@ -53,6 +59,46 @@ def _find_matching_cluster(
     )
 
 
+def _create_issue_cluster(
+    session: Session, complaint: Complaint, analysis: ComplaintAnalysis
+) -> IssueClusterRecord:
+    issue_value = analysis.issue.value
+    company_name = analysis.company_name
+    company_key = _slug(company_name) if company_name else "UNKNOWN"
+    issue_key = _slug(issue_value)
+    now = complaint.submitted_at
+    amount = complaint.amount_involved
+    cluster = IssueClusterRecord(
+        cluster_id=str(uuid4()),
+        cluster_key=f"{issue_key}-{company_key}",
+        title=(
+            f"{issue_value.replace('_', ' ').capitalize()} reports involving "
+            f"{company_name}"
+            if company_name
+            else f"{issue_value.replace('_', ' ').capitalize()} reports"
+        ),
+        company_name=company_name,
+        sector=analysis.sector.value,
+        issue=issue_value,
+        reported_count=1,
+        confirmations=0,
+        evidence_backed_count=0,
+        reviewed_count=0,
+        total_reported_amount=amount,
+        states_affected=0,
+        growth_rate=0,
+        severity=Decimal(str(analysis.severity.confidence)),
+        unresolved_rate=1,
+        first_reported_at=now,
+        last_reported_at=now,
+        trend=[{"month": now.strftime("%b"), "reports": 1}],
+        geography=[],
+        routing=None,
+    )
+    session.add(cluster)
+    return cluster
+
+
 def analyze_complaint(
     session: Session, complaint: Complaint
 ) -> tuple[ComplaintAnalysisRecord, IssueClusterRecord | None]:
@@ -80,10 +126,17 @@ def analyze_complaint(
             amount_involved=complaint.amount_involved,
         )
     )
+    dark_pattern = analyze_dark_pattern(complaint.description)
     cluster = _find_matching_cluster(
         session, analysis.issue.value, analysis.company_name
     )
-    routing = recommend_route(analysis)
+    created_cluster = False
+    if cluster is None:
+        cluster = _create_issue_cluster(session, complaint, analysis)
+        created_cluster = True
+    if dark_pattern.status == "potential_concern":
+        cluster.potential_dark_pattern_count += 1
+    routing = recommend_route(analysis, dark_pattern)
     now = datetime.now(UTC)
     record = ComplaintAnalysisRecord(
         id=str(uuid4()),
@@ -91,10 +144,18 @@ def analyze_complaint(
         cluster_key=cluster.cluster_key if cluster else None,
         analysis={
             "classification": analysis.model_dump(mode="json"),
+            "dark_pattern": dark_pattern.model_dump(mode="json"),
             "routing": routing.model_dump(mode="json"),
         },
         analyzed_at=now,
     )
+    if not created_cluster:
+        cluster.reported_count += 1
+        if complaint.amount_involved is not None:
+            cluster.total_reported_amount = (
+                cluster.total_reported_amount or Decimal(0)
+            ) + complaint.amount_involved
+        cluster.last_reported_at = max(cluster.last_reported_at, complaint.submitted_at)
     session.add(record)
     complaint.status = "analyzed"
     session.add(
@@ -144,7 +205,14 @@ def create_corroboration(
 
 
 def submit_evidence(
-    session: Session, corroboration_id: str, payload: EvidenceCreate
+    session: Session,
+    corroboration_id: str,
+    payload: EvidenceCreate,
+    *,
+    storage_key: str | None = None,
+    content_type: str | None = None,
+    file_size_bytes: int | None = None,
+    sha256_digest: str | None = None,
 ) -> tuple[EvidenceRecord, CorroborationRecord, IssueClusterRecord, bool]:
     corroboration = session.get(CorroborationRecord, corroboration_id)
     if corroboration is None:
@@ -164,9 +232,17 @@ def submit_evidence(
         corroboration_id=corroboration_id,
         evidence_type=payload.evidence_type,
         filename=payload.filename.strip() if payload.filename else None,
-        synthetic_flag=True,
+        storage_key=storage_key,
+        content_type=content_type,
+        file_size_bytes=file_size_bytes,
+        sha256_digest=sha256_digest,
+        synthetic_flag=storage_key is None,
         validation_status="pending-review",
-        review_note="Synthetic demo evidence submitted for review.",
+        review_note=(
+            "Synthetic demo evidence submitted for review."
+            if storage_key is None
+            else "Uploaded evidence submitted for review."
+        ),
         submitted_at=datetime.now(UTC),
     )
     corroboration.status = "accepted_for_signal"

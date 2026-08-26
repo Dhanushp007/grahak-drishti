@@ -15,6 +15,8 @@ export default defineConfig([
         alert: "readonly",
         document: "readonly",
         fetch: "readonly",
+        FormData: "readonly",
+        setTimeout: "readonly",
         URLSearchParams: "readonly",
         window: "readonly",
       },
@@ -30,6 +32,15 @@ export default defineConfig([
     files: ["*.config.mjs", "next.config.mjs", "postcss.config.mjs"],
     languageOptions: {
       globals: {
+        process: "readonly",
+      },
+    },
+  },
+  {
+    files: ["playwright.config.js", "e2e/**/*.js"],
+    languageOptions: {
+      globals: {
+        Buffer: "readonly",
         process: "readonly",
       },
     },

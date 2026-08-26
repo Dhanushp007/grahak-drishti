@@ -95,6 +95,7 @@ class OutboxEvent(Base):
         DateTime(timezone=True), nullable=False
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class IssueClusterRecord(Base):
@@ -123,6 +124,9 @@ class IssueClusterRecord(Base):
         nullable=False, default=0, server_default="0"
     )
     reviewed_count: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
+    potential_dark_pattern_count: Mapped[int] = mapped_column(
         nullable=False, default=0, server_default="0"
     )
     total_reported_amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
@@ -221,6 +225,10 @@ class EvidenceRecord(Base):
     )
     evidence_type: Mapped[str] = mapped_column(String(64), nullable=False)
     filename: Mapped[str | None] = mapped_column(String(200))
+    storage_key: Mapped[str | None] = mapped_column(String(300))
+    content_type: Mapped[str | None] = mapped_column(String(120))
+    file_size_bytes: Mapped[int | None] = mapped_column()
+    sha256_digest: Mapped[str | None] = mapped_column(String(64))
     synthetic_flag: Mapped[bool] = mapped_column(
         nullable=False, default=True, server_default="1"
     )
@@ -232,5 +240,35 @@ class EvidenceRecord(Base):
     )
     review_note: Mapped[str | None] = mapped_column(String(300))
     submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class SyntheticConsumer(Base):
+    __tablename__ = "synthetic_consumers"
+
+    consumer_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    display_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    state: Mapped[str] = mapped_column(String(80), nullable=False)
+    synthetic_flag: Mapped[bool] = mapped_column(
+        nullable=False, default=True, server_default="1"
+    )
+
+
+class SyntheticSignal(Base):
+    __tablename__ = "synthetic_signals"
+    __table_args__ = (Index("ix_synthetic_signals_cluster", "cluster_key"),)
+
+    signal_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    cluster_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    consumer_id: Mapped[str] = mapped_column(
+        ForeignKey("synthetic_consumers.consumer_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    signal_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    synthetic_flag: Mapped[bool] = mapped_column(
+        nullable=False, default=True, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )

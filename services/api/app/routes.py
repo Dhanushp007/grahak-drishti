@@ -1,12 +1,14 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Response, status
+from fastapi.responses import JSONResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from services.api.app.complaints import create_complaint, track_complaint
 from services.api.app.db import get_db
-from services.api.app.intelligence import analyze_complaint
 from services.api.app.issue_schemas import PublicIssueResponse
+from services.api.app.models import ComplaintAnalysisRecord, IssueClusterRecord
 from services.api.app.schemas import (
     ComplaintCreate,
     ComplaintCreated,
@@ -59,9 +61,31 @@ def track_submitted_complaint(
 @router.post("/intelligence", response_model=ComplaintIntelligenceResponse)
 def read_complaint_intelligence(
     payload: TrackingRequest, session: Annotated[Session, Depends(get_db)]
-) -> ComplaintIntelligenceResponse:
+) -> ComplaintIntelligenceResponse | JSONResponse:
     complaint, _ = track_complaint(session, payload)
-    record, cluster = analyze_complaint(session, complaint)
+    record = session.scalar(
+        select(ComplaintAnalysisRecord).where(
+            ComplaintAnalysisRecord.complaint_id == complaint.id
+        )
+    )
+    if record is None:
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={
+                "docket_number": complaint.docket_number,
+                "status": "processing",
+                "message": "Your advisory issue summary is still being prepared.",
+            },
+        )
+    cluster = (
+        session.scalar(
+            select(IssueClusterRecord).where(
+                IssueClusterRecord.cluster_key == record.cluster_key
+            )
+        )
+        if record.cluster_key
+        else None
+    )
     return ComplaintIntelligenceResponse(
         docket_number=complaint.docket_number,
         status=complaint.status,

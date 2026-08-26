@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Check, FileCheck2, LoaderCircle, MapPin, RotateCcw, Share2, Users } from "lucide-react";
 import { useParams } from "next/navigation";
 
-import { fetchPublicIssue, startPublicCorroboration, submitCorroborationEvidence } from "../../../lib/issues.js";
+import { fetchPublicIssue, startPublicCorroboration, submitCorroborationEvidence, submitCorroborationUpload } from "../../../lib/issues.js";
 
 export default function PublicIssuePage() {
   const params = useParams();
@@ -16,6 +16,7 @@ export default function PublicIssuePage() {
   const [corroboration, setCorroboration] = useState(null);
   const [evidenceType, setEvidenceType] = useState("refund/cancellation screenshot");
   const [filename, setFilename] = useState("");
+  const [file, setFile] = useState(null);
   const [explanation, setExplanation] = useState("");
   const clusterKey = decodeURIComponent(params.slug);
 
@@ -54,10 +55,12 @@ export default function PublicIssuePage() {
     setIsConfirming(true);
     setError("");
     try {
-      const result = await submitCorroborationEvidence(corroboration.corroboration_id, {
-        evidence_type: evidenceType,
-        filename: filename.trim() || null,
-      });
+      const result = file
+        ? await submitCorroborationUpload(corroboration.corroboration_id, evidenceType, file)
+        : await submitCorroborationEvidence(corroboration.corroboration_id, {
+          evidence_type: evidenceType,
+          filename: filename.trim() || null,
+        });
       setIssue((current) => ({
         ...current,
         confirmations: result.confirmations,
@@ -108,6 +111,9 @@ export default function PublicIssuePage() {
             </select>
             <label htmlFor="filename">Demo file name <span className="optional">(optional)</span></label>
             <input id="filename" value={filename} onChange={(event) => setFilename(event.target.value)} placeholder="for example: refund-confirmation.png" />
+            <label htmlFor="evidenceUpload">Upload supporting proof <span className="optional">(optional)</span></label>
+            <input id="evidenceUpload" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+            {file && <span className="selected-file">Selected: {file.name}</span>}
             <label htmlFor="explanation">Short explanation <span className="optional">(optional)</span></label>
             <textarea id="explanation" value={explanation} onChange={(event) => setExplanation(event.target.value)} placeholder="What does this proof show?" rows="3" />
             <button className="primary-button" type="submit" disabled={isConfirming}>{isConfirming ? <><LoaderCircle className="spin" size={17} /> Recording...</> : <>Submit demo evidence <FileCheck2 size={17} /></>}</button>

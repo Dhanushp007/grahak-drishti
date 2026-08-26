@@ -79,16 +79,24 @@ export default function HomePage() {
   }
 
   async function loadIntelligence(docketNumber, contact) {
-    try {
-      const response = await fetch("/api/backend/api/v1/complaints/intelligence", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ docket_number: docketNumber, contact }),
-      });
-      if (response.ok) setIntelligence(await response.json());
-    } catch {
-      setIntelligence(null);
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      try {
+        const response = await fetch("/api/backend/api/v1/complaints/intelligence", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ docket_number: docketNumber, contact }),
+        });
+        if (response.status === 200) {
+          setIntelligence(await response.json());
+          return;
+        }
+        if (response.status !== 202) return;
+      } catch {
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
     }
+    setIntelligence(null);
   }
 
   if (submission) {
@@ -120,6 +128,7 @@ export default function HomePage() {
               <h2>{intelligence.analysis?.classification?.issue?.value || "Issue pattern identified"}</h2>
               <p>We organized your report so similar consumer experiences can be seen together.</p>
               {intelligence.matched_issue ? <a href={`/issues/${intelligence.matched_issue.cluster_key}`} className="analysis-link">See {intelligence.matched_issue.reported_count.toLocaleString()} similar reports <ArrowRight size={15} /></a> : <span className="analysis-pending">No matching public issue signal yet.</span>}
+              {intelligence.analysis?.dark_pattern?.status === "potential_concern" && <p className="dark-pattern-note"><strong>Potential dark pattern detected</strong> · {intelligence.analysis.dark_pattern.explanation} This is an advisory signal for authorized review, not a legal finding.</p>}
               <span className="analysis-pending">Routing is advisory and does not replace existing grievance systems.</span>
             </section>
           ) : <p className="analysis-pending" aria-live="polite">Preparing your advisory issue summary...</p>}

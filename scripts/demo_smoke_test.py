@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from collections.abc import Mapping
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -31,6 +32,21 @@ def request_json(
             return response.status, json.load(response)
     except HTTPError as error:
         return error.code, json.loads(error.read().decode())
+
+
+def wait_for_intelligence(docket: str, contact: Mapping[str, Any]) -> Mapping[str, Any]:
+    for _ in range(40):
+        status, body = request_json(
+            "POST",
+            "/api/v1/complaints/intelligence",
+            {"docket_number": docket, "contact": contact},
+        )
+        if status == 200:
+            return body
+        if status != 202:
+            raise AssertionError(f"Unexpected intelligence response: {status} {body}")
+        time.sleep(0.1)
+    raise AssertionError("Complaint intelligence was not processed")
 
 
 def wait_for_health() -> None:
@@ -76,12 +92,9 @@ def run_demo_flow() -> None:
     assert tracking_status == 200
     assert tracking["status"] == "submitted"
 
-    intelligence_status, intelligence = request_json(
-        "POST",
-        "/api/v1/complaints/intelligence",
-        {"docket_number": docket, "contact": {"email": "demo-flow@example.com"}},
+    intelligence = wait_for_intelligence(
+        docket, {"email": "demo-flow@example.com"}
     )
-    assert intelligence_status == 200
     assert (
         intelligence["analysis"]["classification"]["issue"]["value"]
         == "refund_delay"

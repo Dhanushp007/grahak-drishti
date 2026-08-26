@@ -1,0 +1,1 @@
+"""Asynchronous complaint event processing worker."""
