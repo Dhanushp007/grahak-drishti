@@ -10,6 +10,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -94,3 +95,67 @@ class OutboxEvent(Base):
         DateTime(timezone=True), nullable=False
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class IssueClusterRecord(Base):
+    __tablename__ = "issue_clusters"
+    __table_args__ = (
+        CheckConstraint("reported_count >= 1", name="ck_issue_clusters_reported_count"),
+        CheckConstraint("confirmations >= 0", name="ck_issue_clusters_confirmations"),
+        CheckConstraint(
+            "total_reported_amount IS NULL OR total_reported_amount >= 0",
+            name="ck_issue_clusters_amount_non_negative",
+        ),
+        Index("ix_issue_clusters_sector_issue", "sector", "issue"),
+    )
+
+    cluster_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    cluster_key: Mapped[str] = mapped_column(String(160), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(240), nullable=False)
+    company_name: Mapped[str | None] = mapped_column(String(200))
+    sector: Mapped[str] = mapped_column(String(80), nullable=False)
+    issue: Mapped[str] = mapped_column(String(80), nullable=False)
+    reported_count: Mapped[int] = mapped_column(nullable=False)
+    confirmations: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
+    total_reported_amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    states_affected: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
+    growth_rate: Mapped[Decimal] = mapped_column(
+        Numeric(8, 4), nullable=False, default=0, server_default="0"
+    )
+    severity: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0, server_default="0"
+    )
+    unresolved_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0, server_default="0"
+    )
+    first_reported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    last_reported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class ConsumerConfirmation(Base):
+    __tablename__ = "consumer_confirmations"
+    __table_args__ = (
+        UniqueConstraint(
+            "cluster_id",
+            "confirmation_digest",
+            name="uq_consumer_confirmations_cluster_digest",
+        ),
+        Index("ix_consumer_confirmations_cluster", "cluster_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    cluster_id: Mapped[str] = mapped_column(
+        ForeignKey("issue_clusters.cluster_id", ondelete="CASCADE"), nullable=False
+    )
+    confirmation_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
