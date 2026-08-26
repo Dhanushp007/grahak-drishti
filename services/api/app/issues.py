@@ -31,6 +31,17 @@ def get_issue_cluster(session: Session, cluster_key: str) -> IssueClusterRecord:
     return cluster
 
 
+def list_issue_clusters(session: Session) -> list[IssueClusterRecord]:
+    return list(
+        session.scalars(
+            select(IssueClusterRecord).order_by(
+                IssueClusterRecord.reported_count.desc(),
+                IssueClusterRecord.last_reported_at.desc(),
+            )
+        )
+    )
+
+
 def confirm_issue(
     session: Session, cluster_key: str, confirmation_key: str
 ) -> tuple[IssueClusterRecord, bool]:
