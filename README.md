@@ -65,6 +65,19 @@ Pop-Location
 
 The app exposes the report form at `/` and private docket tracking at `/track`. `API_ORIGIN` is read when Next.js starts or builds so the same-origin API proxy points at the running FastAPI service.
 
+Run the backend golden journey against a migrated and seeded local API with:
+
+```powershell
+$env:DATABASE_URL = "sqlite:///./demo-flow.db"
+python -m alembic upgrade head
+python -m scripts.seed_demo --reset
+python -m uvicorn services.api.app.main:app --port 8002
+```
+
+In a second terminal, run `python scripts/demo_smoke_test.py` with
+`$env:DEMO_BASE_URL = "http://127.0.0.1:8002"`. The check covers complaint,
+intelligence, evidence, dashboard and geography behavior.
+
 Run the government intelligence app separately:
 
 ```powershell
