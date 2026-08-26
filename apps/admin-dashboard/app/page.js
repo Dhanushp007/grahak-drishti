@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, AlertTriangle, ArrowUpRight, BellRing, CircleHelp, LoaderCircle, Map, RotateCcw, ShieldAlert, Users } from "lucide-react";
+import { Activity, AlertTriangle, ArrowUpRight, BellRing, CircleHelp, LoaderCircle, Map, RotateCcw, ShieldAlert, UserRoundCheck, Users } from "lucide-react";
 
 import { fetchDashboardGeography, fetchDashboardOverview } from "../lib/dashboard.js";
+import { loginAsDemoGovernmentOfficial } from "../lib/demo.js";
 
 export default function DashboardPage() {
   const [dashboard, setDashboard] = useState(null);
   const [geography, setGeography] = useState(null);
   const [error, setError] = useState("");
+  const [demoSession, setDemoSession] = useState(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   useEffect(() => { loadDashboard(); }, []);
 
@@ -20,6 +24,18 @@ export default function DashboardPage() {
       setGeography(stateData);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Dashboard data is unavailable right now.");
+    }
+  }
+
+  async function startDemoLogin() {
+    setIsLoggingIn(true);
+    setLoginError("");
+    try {
+      setDemoSession(await loginAsDemoGovernmentOfficial());
+    } catch (requestError) {
+      setLoginError(requestError instanceof Error ? requestError.message : "Demo access is unavailable right now.");
+    } finally {
+      setIsLoggingIn(false);
     }
   }
 
@@ -43,7 +59,7 @@ export default function DashboardPage() {
       <section className="dashboard-content">
         <header className="dashboard-header">
           <div><p className="overline">Government intelligence</p><h1>Consumer protection<br /><em>command center.</em></h1></div>
-          <div className="header-meta"><span className="live-dot" /> Synthetic signal view <small>{dashboard.as_of}</small></div>
+          <div className="header-meta"><span className="live-dot" /> Synthetic signal view <small>{dashboard.as_of}</small>{demoSession ? <span className="demo-session"><UserRoundCheck size={14} /> {demoSession.display_name}</span> : <button className="demo-login-button" type="button" onClick={startDemoLogin} disabled={isLoggingIn}><UserRoundCheck size={14} /> {isLoggingIn ? "Opening demo" : "Official demo"}</button>}{loginError && <span className="demo-login-error" role="alert">{loginError}</span>}</div>
         </header>
         <div className="synthetic-banner"><ShieldAlert size={16} /><span><strong>{dashboard.data_label}</strong> · {dashboard.synthetic_notice}</span></div>
         <section className="kpi-grid" aria-label="Key metrics">

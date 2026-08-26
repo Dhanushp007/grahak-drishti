@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, FileUp, LoaderCircle, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, FileUp, LoaderCircle, ShieldCheck, UserRoundCheck } from "lucide-react";
 
 import { buildComplaintPayload, validateComplaintForm } from "../lib/complaint.js";
+import { loginAsDemoCitizen } from "../lib/demo.js";
 
 const initialForm = {
   description: "",
@@ -20,12 +21,29 @@ export default function HomePage() {
   const [submission, setSubmission] = useState(null);
   const [intelligence, setIntelligence] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [demoSession, setDemoSession] = useState(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   function updateField(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
     setErrors((current) => ({ ...current, [name]: "" }));
     setSubmissionError("");
+  }
+
+  async function startDemoLogin() {
+    setIsLoggingIn(true);
+    setLoginError("");
+    try {
+      const session = await loginAsDemoCitizen();
+      setDemoSession(session);
+      setForm((current) => ({ ...current, email: "demo.citizen@example.test", phone: "" }));
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "Demo access is unavailable right now.");
+    } finally {
+      setIsLoggingIn(false);
+    }
   }
 
   async function submitComplaint(event) {
@@ -80,7 +98,7 @@ export default function HomePage() {
           <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
             GRAHAK<span>-</span>DRISHTI
           </a>
-          <nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/track">Track a report</a></nav>
+          <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/track">Track a report</a></nav><span className="demo-session">{demoSession?.display_name || "Demo citizen"}</span></div>
         </header>
         <section className="success-panel" aria-labelledby="success-title">
           <div className="success-icon" aria-hidden="true"><Check size={28} /></div>
@@ -119,7 +137,8 @@ export default function HomePage() {
         <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
           GRAHAK<span>-</span>DRISHTI
         </a>
-        <nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/track">Track a report</a></nav>
+        <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/track">Track a report</a></nav>{demoSession ? <span className="demo-session"><UserRoundCheck size={14} /> {demoSession.display_name}</span> : <button className="demo-login-button" type="button" onClick={startDemoLogin} disabled={isLoggingIn}><UserRoundCheck size={14} /> {isLoggingIn ? "Opening demo" : "Citizen demo"}</button>}</div>
+        {loginError && <p className="demo-login-error" role="alert">{loginError}</p>}
       </header>
 
       <section className="hero-grid">
