@@ -196,7 +196,14 @@ jobs:
           server_pid=$!
           python -m services.complaint_worker.app.worker --interval 0.1 &
           worker_pid=$!
-          trap 'kill "$server_pid" "$worker_pid"' EXIT
+          trap 'kill "$server_pid" "$worker_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8002/health >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8002/health >/dev/null
           python scripts/demo_smoke_test.py
 
   citizen-web:
@@ -305,12 +312,18 @@ jobs:
           citizen_pid=$!
           (cd apps/admin-dashboard && npm run dev -- --port 3006) &
           admin_pid=$!
-          trap 'kill "$api_pid" "$worker_pid" "$citizen_pid" "$admin_pid"' EXIT
+          trap 'kill "$api_pid" "$worker_pid" "$citizen_pid" "$admin_pid" 2>/dev/null || true' EXIT
           for attempt in {1..30}; do
-            curl --fail --silent http://127.0.0.1:8003/health >/dev/null && break
+            if curl --fail --silent http://127.0.0.1:8003/health >/dev/null && \
+              curl --fail --silent http://127.0.0.1:3005/ >/dev/null && \
+              curl --fail --silent http://127.0.0.1:3006/ >/dev/null; then
+              break
+            fi
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:8003/health >/dev/null
+          curl --fail --silent http://127.0.0.1:3005/ >/dev/null
+          curl --fail --silent http://127.0.0.1:3006/ >/dev/null
 
       - name: Run browser golden journey
         working-directory: apps/citizen-web
