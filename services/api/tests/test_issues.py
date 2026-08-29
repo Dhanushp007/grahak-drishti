@@ -1,6 +1,7 @@
 from collections.abc import Generator
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,6 +12,7 @@ from sqlalchemy.pool import StaticPool
 from services.api.app.db import Base, get_db
 from services.api.app.main import app
 from services.api.app.models import IssueClusterRecord
+from services.complaint_worker.app.worker import process_pending_events
 
 
 @pytest.fixture()
@@ -134,6 +136,52 @@ def test_corroboration_updates_metrics_only_after_evidence(
     assert duplicate.json()["recorded"] is False
 
 
+def test_real_evidence_upload_is_stored_and_hashed(
+    issue_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("EVIDENCE_STORAGE_DIR", str(tmp_path))
+    started = issue_client.post(
+        "/api/v1/issues/REFUND-DELAY-EXAMPLE-SELLER/corroborations",
+        json={"confirmation_key": "upload-confirmation-1234"},
+    )
+    corroboration_id = started.json()["corroboration_id"]
+
+    uploaded = issue_client.post(
+        f"/api/v1/issues/corroborations/{corroboration_id}/evidence/upload",
+        data={"evidence_type": "order screenshot"},
+        files={"upload": ("refund-proof.png", b"demo-proof-bytes", "image/png")},
+    )
+
+    assert uploaded.status_code == 200
+    assert uploaded.json()["synthetic_flag"] is False
+    assert uploaded.json()["filename"] == "refund-proof.png"
+    assert uploaded.json()["file_size_bytes"] == len(b"demo-proof-bytes")
+    assert len(list(tmp_path.iterdir())) == 1
+
+
+def test_evidence_upload_rejects_unsupported_content_type(
+    issue_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("EVIDENCE_STORAGE_DIR", str(tmp_path))
+    started = issue_client.post(
+        "/api/v1/issues/REFUND-DELAY-EXAMPLE-SELLER/corroborations",
+        json={"confirmation_key": "upload-confirmation-5678"},
+    )
+    corroboration_id = started.json()["corroboration_id"]
+
+    rejected = issue_client.post(
+        f"/api/v1/issues/corroborations/{corroboration_id}/evidence/upload",
+        data={"evidence_type": "other supporting proof"},
+        files={
+            "upload": ("proof.exe", b"not-an-image", "application/octet-stream")
+        },
+    )
+
+    assert rejected.status_code == 422
+    assert rejected.json()["error"]["code"] == "INVALID_EVIDENCE_FILE"
+    assert list(tmp_path.iterdir()) == []
+
+
 def test_unknown_issue_returns_the_same_safe_not_found_error(
     issue_client: TestClient,
 ) -> None:
@@ -164,6 +212,22 @@ def test_golden_complaint_matches_an_issue_and_dashboard(
         },
     )
     assert created.status_code == 201
+
+    intelligence = issue_client.post(
+        "/api/v1/complaints/intelligence",
+        json={
+            "docket_number": created.json()["docket_number"],
+            "contact": {"email": "GOLDEN@example.com"},
+        },
+    )
+    assert intelligence.status_code == 202
+
+    override = app.dependency_overrides[get_db]
+    session = next(override())
+    try:
+        assert process_pending_events(session) == 1
+    finally:
+        session.close()
 
     intelligence = issue_client.post(
         "/api/v1/complaints/intelligence",

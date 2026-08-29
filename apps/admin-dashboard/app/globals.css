@@ -44,7 +44,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0; }
 .dashboard-header h1 em { font-weight: 600; }
 .header-meta { font-size: 11px; letter-spacing: .02em; }
 .synthetic-banner { border: 1px solid #ceded3; border-radius: 6px; margin: 24px 0 18px; padding: 12px 15px; }
-.kpi-grid { gap: 14px; }
+.kpi-grid { gap: 14px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 .kpi-card { border-radius: 7px; min-height: 142px; padding: 21px; }
 .kpi-card p { font-size: 11px; letter-spacing: .02em; }
 .kpi-card strong { font-family: var(--font-display); font-size: 2rem; letter-spacing: 0; }
@@ -69,6 +69,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0; }
 .trend-column strong, .trend-column small, .state-list-row strong { font-family: var(--font-body); }
 .routing-panel { border-top: 3px solid var(--teal); }
 .route-name { font-family: var(--font-display); letter-spacing: 0; }
+.pattern-note { align-items: flex-start; background: #f8edc9; color: #806817; display: flex; font-size: 10px; gap: 8px; line-height: 1.4; margin-top: 20px; padding: 12px; }.pattern-note svg { flex: 0 0 auto; }.pattern-note strong { color: #69530e; }
 .kpi-card strong, .signal-ring strong, .detail-metrics strong, .quality-stat strong, .trend-column strong, .state-list-row strong, .issue-row-link > :nth-child(3), .issue-row-link > :nth-child(4) { font-family: var(--font-number); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 
 @media (max-width: 900px) {

@@ -110,6 +110,8 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .analysis-result p:not(.eyebrow) { margin: 8px 0 13px; }
 .analysis-link { align-items: center; color: var(--teal); display: inline-flex; font-family: Arial, sans-serif; font-size: 11px; font-weight: 700; gap: 6px; text-decoration: none; }
 .analysis-pending { display: block; margin: 22px 0 0; }
+.dark-pattern-note { border-left: 3px solid var(--yellow); color: #78621d !important; margin: 17px 0 0 !important; padding-left: 11px; }
+.dark-pattern-note strong { color: #69530e; }
 .back-link { align-items: center; color: var(--teal); display: inline-flex; font-family: Arial, sans-serif; font-size: 12px; gap: 7px; text-decoration: none; }
 .tracking-shell { align-items: stretch; display: flex; flex-direction: column; }
 .tracking-layout { align-items: start; display: grid; gap: clamp(48px, 9vw, 132px); grid-template-columns: minmax(260px, .8fr) minmax(420px, 1fr); margin: auto 7%; padding: 80px 0; width: auto; }
@@ -279,6 +281,7 @@ textarea { min-height: 132px; }
 .signal-action h2 { font-size: 2rem; }
 .corroboration-form { gap: 10px; }
 .corroboration-form .primary-button { margin-top: 12px; }
+.selected-file { color: var(--teal); font-family: var(--font-body); font-size: 11px; }
 .evidence-confirmation { border-radius: 6px; }
 .docket-box strong, .issue-list-stats strong, .signal-score strong, .metric-grid strong { font-family: var(--font-number); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 

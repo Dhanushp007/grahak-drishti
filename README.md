@@ -25,6 +25,8 @@ The service exposes `GET /health` and returns a versioned service status. Compla
 
 The AI package currently provides a deterministic, explainable complaint classifier for worker use. It returns structured sector, issue, severity, financial-impact, evidence, duplicate-hint, confidence, and provenance fields; it is advisory and does not run on the complaint acknowledgement path.
 
+The complaint worker consumes unprocessed `complaint.created.v1` outbox events with `python -m services.complaint_worker.app.worker`. It runs classification, semantic-plus-metadata duplicate detection, dark-pattern analysis, routing guidance, and aggregate cluster updates. Processing is idempotent: an event is marked processed only after its analysis is persisted.
+
 The same package provides a provider-replaceable 128-dimensional deterministic embedding baseline and cosine similarity contract. It fingerprints normalized text for traceability without returning the source complaint text; a production semantic model and pgvector persistence remain later milestones.
 
 The clustering worker can turn accepted duplicate candidates into an aggregate issue cluster. Its private record retains member IDs for internal processing, while the public projection exposes only issue, company, sector, count, amount, and time aggregates; complaint narratives and identifiers are excluded.
@@ -32,6 +34,8 @@ The clustering worker can turn accepted duplicate candidates into an aggregate i
 The consumer signal module applies the PRD weights for affected consumers, growth, financial impact, severity, unresolved rate, and geographic spread. The citizen app includes a synthetic aggregate issue view at `/issues`. “I experienced this too” starts a corroboration and requires supporting evidence metadata before aggregate counts update.
 
 The issue signal API exposes `GET /api/v1/issues/{cluster_key}` for aggregate-only issue reads, `POST /api/v1/issues/{cluster_key}/corroborations`, and `POST /api/v1/issues/corroborations/{id}/evidence`. Confirmation keys are hashed before storage; no contact details or complaint narratives are returned. The legacy `/confirm` route rejects blind votes with `409 CORROBORATION_REQUIRED`.
+
+Evidence can be submitted as a real multipart file through `POST /api/v1/issues/corroborations/{id}/evidence/upload`. Local/demo storage writes a generated safe key below `EVIDENCE_STORAGE_DIR` (default `.demo-storage/evidence`), stores SHA-256, content type, size, and review metadata, and accepts only PDF, JPEG, PNG, and WebP files up to 5 MB. Uploaded evidence remains pending review and is never presented as legally verified.
 
 Gate 6 provides advisory dark-pattern analysis for evidence text and deterministic consumer-navigation recommendations. Results use “Potential dark pattern detected” language, include evidence and guidance, and never establish a legal violation or binding regulatory action.
 
@@ -50,6 +54,9 @@ python -m scripts.seed_demo
 ```
 
 Use `python -m scripts.seed_demo --reset` only when intentionally resetting local demo complaint and intelligence records. See `data/seed/README.md` for the data-truthfulness boundary.
+
+The seed creates five aggregate scenarios plus deterministic synthetic consumers,
+complaints, signals, analysis records, corroborations, and sample evidence rows.
 
 ## Citizen web development
 
@@ -78,6 +85,13 @@ In a second terminal, run `python scripts/demo_smoke_test.py` with
 `$env:DEMO_BASE_URL = "http://127.0.0.1:8002"`. The check covers complaint,
 intelligence, evidence, dashboard and geography behavior.
 
+For asynchronous complaint processing in the local demo, run the worker in a
+third terminal after starting the API:
+
+```powershell
+python -m services.complaint_worker.app.worker --interval 0.1
+```
+
 Run the government intelligence app separately:
 
 ```powershell
@@ -89,6 +103,20 @@ Pop-Location
 ```
 
 The admin app loads `/api/v1/dashboard/overview`, `/api/v1/dashboard/geography`, and aggregate issue drill-down data from the API. Both apps visibly label the environment as synthetic demo data.
+
+Run the browser journey after starting the API, complaint worker, and both web apps:
+
+```powershell
+Push-Location apps/citizen-web
+$env:CITIZEN_BASE_URL = "http://127.0.0.1:3000"
+$env:ADMIN_BASE_URL = "http://127.0.0.1:3001"
+npx playwright install chromium
+npm run e2e
+Pop-Location
+```
+
+The browser test covers demo login, complaint submission, worker-produced
+intelligence, issue navigation, real file upload, and government drill-down.
 
 ## Database development
 
