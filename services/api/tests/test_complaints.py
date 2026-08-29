@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 from services.api.app.db import Base, get_db
 from services.api.app.main import app
 from services.api.app.models import Complaint, ComplaintStatusEvent, OutboxEvent
+from services.complaint_worker.app.worker import process_pending_events
 
 
 @pytest.fixture()
@@ -157,3 +159,99 @@ def test_initial_case_event_and_outbox_are_written_together(client: TestClient) 
         )
     finally:
         session.close()
+
+
+def test_my_reports_edit_window_and_reprocessing(client: TestClient) -> None:
+    created = client.post("/api/v1/complaints", json=complaint_payload())
+    docket = created.json()["docket_number"]
+    contact = {"email": "consumer@example.com"}
+
+    reports = client.post("/api/v1/complaints/my-reports", json={"contact": contact})
+    assert reports.status_code == 200
+    assert reports.json()[0]["editable"] is True
+    assert reports.json()[0]["editable_until"]
+
+    updated = client.patch(
+        f"/api/v1/complaints/{docket}",
+        json={
+            "contact": contact,
+            "description": "The refund is still delayed after my cancellation.",
+            "company_name": "Example Seller",
+            "amount_involved": "1599.00",
+            "state": "Maharashtra",
+        },
+    )
+    assert updated.status_code == 200
+    assert updated.json()["status"] == "submitted"
+
+    override = app.dependency_overrides[get_db]
+    session = next(override())
+    try:
+        complaint = session.scalar(
+            select(Complaint).where(Complaint.docket_number == docket)
+        )
+        assert complaint is not None
+        complaint.submitted_at = datetime.now(UTC) - timedelta(hours=47)
+        session.commit()
+    finally:
+        session.close()
+    inside = client.patch(
+        f"/api/v1/complaints/{docket}",
+        json={
+            "contact": contact,
+            "description": "Updated within the allowed window.",
+            "company_name": "Example Seller",
+            "amount_involved": "1599.00",
+            "state": "Maharashtra",
+        },
+    )
+    assert inside.status_code == 200
+
+    override = app.dependency_overrides[get_db]
+    session = next(override())
+    try:
+        complaint = session.scalar(
+            select(Complaint).where(Complaint.docket_number == docket)
+        )
+        assert complaint is not None
+        complaint.submitted_at = datetime.now(UTC) - timedelta(hours=48)
+        session.commit()
+    finally:
+        session.close()
+    boundary = client.patch(
+        f"/api/v1/complaints/{docket}",
+        json={
+            "contact": contact,
+            "description": "The boundary must be read-only.",
+            "company_name": "Example Seller",
+            "amount_involved": "1599.00",
+            "state": "Maharashtra",
+        },
+    )
+    assert boundary.status_code == 409
+    assert boundary.json()["error"]["code"] == "COMPLAINT_EDIT_WINDOW_EXPIRED"
+
+    override = app.dependency_overrides[get_db]
+    session = next(override())
+    try:
+        complaint = session.scalar(
+            select(Complaint).where(Complaint.docket_number == docket)
+        )
+        assert complaint is not None
+        complaint.submitted_at = datetime.now(UTC) - timedelta(hours=49)
+        session.commit()
+    finally:
+        session.close()
+    outside = client.patch(
+        f"/api/v1/complaints/{docket}",
+        json={
+            "contact": contact,
+            "description": "An update after the window must fail.",
+            "company_name": "Example Seller",
+            "amount_involved": "1599.00",
+            "state": "Maharashtra",
+        },
+    )
+    assert outside.status_code == 409
+
+    assert process_pending_events(next(app.dependency_overrides[get_db]())) >= 1

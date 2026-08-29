@@ -45,6 +45,7 @@ class ComplaintCreate(BaseModel):
     amount_involved: Decimal | None = Field(
         default=None, ge=0, max_digits=12, decimal_places=2
     )
+    state: str | None = Field(default=None, max_length=80)
     currency: Literal["INR"] = "INR"
     contact: ContactInput
 
@@ -55,6 +56,8 @@ class ComplaintCreate(BaseModel):
             raise ValueError("description must not be blank")
         if self.company_name is not None:
             self.company_name = self.company_name.strip() or None
+        if self.state is not None:
+            self.state = self.state.strip() or None
         return self
 
 
@@ -65,10 +68,52 @@ class TrackingRequest(BaseModel):
     contact: ContactInput
 
 
+class ContactRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contact: ContactInput
+
+
 class ComplaintCreated(BaseModel):
     docket_number: str
     status: str
     submitted_at: datetime
+
+
+class ComplaintUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contact: ContactInput
+    description: str = Field(min_length=1, max_length=5000)
+    company_name: str | None = Field(default=None, max_length=200)
+    amount_involved: Decimal | None = Field(
+        default=None, ge=0, max_digits=12, decimal_places=2
+    )
+    state: str | None = Field(default=None, max_length=80)
+
+    @model_validator(mode="after")
+    def normalize_text(self) -> "ComplaintUpdate":
+        self.description = self.description.strip()
+        if not self.description:
+            raise ValueError("description must not be blank")
+        if self.company_name is not None:
+            self.company_name = self.company_name.strip() or None
+        if self.state is not None:
+            self.state = self.state.strip() or None
+        return self
+
+
+class ComplaintReport(BaseModel):
+    docket_number: str
+    description: str
+    company_name: str | None
+    amount_involved: Decimal | None
+    state: str | None
+    status: str
+    submitted_at: datetime
+    updated_at: datetime
+    editable_until: datetime
+    editable: bool
 
 
 class TimelineEvent(BaseModel):

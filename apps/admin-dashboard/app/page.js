@@ -52,7 +52,7 @@ export default function DashboardPage() {
           <a className="nav-item active" href="/"><Activity size={17} /> Command center</a>
           <a className="nav-item" href="#issues"><AlertTriangle size={17} /> Emerging issues <span>{dashboard.issues.length}</span></a>
           <a className="nav-item" href="#map"><Map size={17} /> Issue map</a>
-          <a className="nav-item" href="#alerts"><BellRing size={17} /> Alerts <span>11</span></a>
+          <a className="nav-item" href="#alerts"><BellRing size={17} /> Alerts</a>
         </nav>
         <div className="sidebar-footer"><CircleHelp size={16} /><span>Evidence is aggregate and advisory.</span></div>
       </aside>

@@ -5,7 +5,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from services.api.app.complaints import ComplaintNotFoundError
+from services.api.app.complaints import (
+    ComplaintEditWindowExpiredError,
+    ComplaintNotFoundError,
+)
 from services.api.app.dashboard_routes import router as dashboard_router
 from services.api.app.demo_routes import router as demo_router
 from services.api.app.intelligence import CorroborationNotFoundError
@@ -42,6 +45,24 @@ async def complaint_not_found_handler(
             "error": {
                 "code": "COMPLAINT_NOT_FOUND",
                 "message": "Complaint could not be found",
+            }
+        },
+    )
+
+
+@app.exception_handler(ComplaintEditWindowExpiredError)
+async def complaint_edit_window_expired_handler(
+    request: Request, exc: ComplaintEditWindowExpiredError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=409,
+        content={
+            "error": {
+                "code": "COMPLAINT_EDIT_WINDOW_EXPIRED",
+                "message": (
+                    "This report is now read-only because its 48-hour edit window "
+                    "has ended."
+                ),
             }
         },
     )

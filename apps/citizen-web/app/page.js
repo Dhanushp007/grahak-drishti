@@ -5,6 +5,7 @@ import { ArrowRight, Check, FileUp, LoaderCircle, ShieldCheck, UserRoundCheck } 
 
 import { buildComplaintPayload, validateComplaintForm } from "../lib/complaint.js";
 import { loginAsDemoCitizen } from "../lib/demo.js";
+import { DEMO_SCENARIOS } from "../lib/demo-scenarios.js";
 
 const initialForm = {
   description: "",
@@ -12,6 +13,7 @@ const initialForm = {
   amountInvolved: "",
   email: "",
   phone: "",
+  state: "Maharashtra",
 };
 
 export default function HomePage() {
@@ -24,6 +26,8 @@ export default function HomePage() {
   const [demoSession, setDemoSession] = useState(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [demoIndex, setDemoIndex] = useState(0);
+  const [loadedDemo, setLoadedDemo] = useState(null);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -38,12 +42,30 @@ export default function HomePage() {
     try {
       const session = await loginAsDemoCitizen();
       setDemoSession(session);
+      window.sessionStorage.setItem("gd-demo-contact", "demo.citizen@example.test");
       setForm((current) => ({ ...current, email: "demo.citizen@example.test", phone: "" }));
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : "Demo access is unavailable right now.");
     } finally {
       setIsLoggingIn(false);
     }
+  }
+
+  function loadDemoComplaint() {
+    const scenario = DEMO_SCENARIOS[demoIndex];
+    setForm((current) => ({
+      ...current,
+      description: scenario.description,
+      companyName: scenario.companyName,
+      amountInvolved: scenario.amountInvolved,
+      state: scenario.state,
+      email: scenario.contact,
+      phone: "",
+    }));
+    setLoadedDemo(scenario);
+    setDemoIndex((current) => (current + 1) % DEMO_SCENARIOS.length);
+    setErrors({});
+    setSubmissionError("");
   }
 
   async function submitComplaint(event) {
@@ -56,17 +78,19 @@ export default function HomePage() {
     setIsSubmitting(true);
     setIntelligence(null);
     try {
+      const payload = buildComplaintPayload(form);
       const response = await fetch("/api/backend/api/v1/complaints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildComplaintPayload(form)),
+        body: JSON.stringify(payload),
       });
       const body = await response.json();
       if (!response.ok) {
         throw new Error(body?.error?.message || "We could not submit your report.");
       }
+      window.sessionStorage.setItem("gd-demo-contact", payload.contact.email || payload.contact.phone);
       setSubmission(body);
-      void loadIntelligence(body.docket_number, buildComplaintPayload(form).contact);
+      void loadIntelligence(body.docket_number, payload.contact);
     } catch (error) {
       setSubmissionError(
         error instanceof Error
@@ -99,6 +123,10 @@ export default function HomePage() {
     setIntelligence(null);
   }
 
+  function advisoryRecommendation() {
+    return intelligence?.analysis?.routing?.reason || "An authorized reviewer should assess this aggregate signal.";
+  }
+
   if (submission) {
     return (
       <main className="page-shell success-shell">
@@ -106,7 +134,7 @@ export default function HomePage() {
           <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
             GRAHAK<span>-</span>DRISHTI
           </a>
-          <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/track">Track a report</a></nav><span className="demo-session">{demoSession?.display_name || "Demo citizen"}</span></div>
+          <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a></nav><span className="demo-session">{demoSession?.display_name || "Demo citizen"}</span></div>
         </header>
         <section className="success-panel" aria-labelledby="success-title">
           <div className="success-icon" aria-hidden="true"><Check size={28} /></div>
@@ -127,7 +155,15 @@ export default function HomePage() {
               <p className="eyebrow">Advisory intelligence</p>
               <h2>{intelligence.analysis?.classification?.issue?.value || "Issue pattern identified"}</h2>
               <p>We organized your report so similar consumer experiences can be seen together.</p>
+              <div className="analysis-facts">
+                <span><strong>Company</strong>{intelligence.analysis?.classification?.company_name || "Not provided"}</span>
+                <span><strong>Sector</strong>{intelligence.analysis?.classification?.sector?.value || "Needs review"}</span>
+                <span><strong>Amount</strong>{intelligence.analysis?.classification?.financial_impact ? `Rs. ${Number(intelligence.analysis.classification.financial_impact).toLocaleString("en-IN")}` : "Not provided"}</span>
+                <span><strong>Severity</strong>{intelligence.analysis?.classification?.severity?.value || "Needs review"}</span>
+                <span><strong>Confidence</strong>{Math.round(Number(intelligence.analysis?.classification?.issue?.confidence || 0) * 100)}%</span>
+              </div>
               {intelligence.matched_issue ? <a href={`/issues/${intelligence.matched_issue.cluster_key}`} className="analysis-link">See {intelligence.matched_issue.reported_count.toLocaleString()} similar reports <ArrowRight size={15} /></a> : <span className="analysis-pending">No matching public issue signal yet.</span>}
+              <p className="analysis-recommendation"><strong>Recommended next step</strong> · {advisoryRecommendation()}</p>
               {intelligence.analysis?.dark_pattern?.status === "potential_concern" && <p className="dark-pattern-note"><strong>Potential dark pattern detected</strong> · {intelligence.analysis.dark_pattern.explanation} This is an advisory signal for authorized review, not a legal finding.</p>}
               <span className="analysis-pending">Routing is advisory and does not replace existing grievance systems.</span>
             </section>
@@ -146,7 +182,7 @@ export default function HomePage() {
         <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
           GRAHAK<span>-</span>DRISHTI
         </a>
-        <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/track">Track a report</a></nav>{demoSession ? <span className="demo-session"><UserRoundCheck size={14} /> {demoSession.display_name}</span> : <button className="demo-login-button" type="button" onClick={startDemoLogin} disabled={isLoggingIn}><UserRoundCheck size={14} /> {isLoggingIn ? "Opening demo" : "Citizen demo"}</button>}</div>
+        <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a></nav>{demoSession ? <span className="demo-session"><UserRoundCheck size={14} /> {demoSession.display_name}</span> : <button className="demo-login-button" type="button" onClick={startDemoLogin} disabled={isLoggingIn}><UserRoundCheck size={14} /> {isLoggingIn ? "Opening demo" : "Citizen demo"}</button>}</div>
         {loginError && <p className="demo-login-error" role="alert">{loginError}</p>}
       </header>
 
@@ -198,6 +234,12 @@ export default function HomePage() {
                 <label htmlFor="amountInvolved">Amount involved <span className="optional">(optional)</span></label>
                 <div className="currency-input"><span aria-hidden="true">Rs.</span><input id="amountInvolved" name="amountInvolved" value={form.amountInvolved} onChange={updateField} inputMode="decimal" placeholder="0.00" /></div>
               </div>
+              <div className="field-group">
+                <label htmlFor="state">State <span className="optional">(optional)</span></label>
+                <select id="state" name="state" value={form.state} onChange={updateField}>
+                  {['Maharashtra', 'Karnataka', 'Delhi', 'Uttar Pradesh', 'Tamil Nadu', 'Gujarat', 'West Bengal', 'Telangana', 'Rajasthan', 'Kerala', 'Bihar', 'Punjab', 'Madhya Pradesh', 'Andhra Pradesh', 'Odisha', 'Haryana', 'Assam', 'Jharkhand', 'Chhattisgarh', 'Uttarakhand'].map((state) => <option key={state}>{state}</option>)}
+                </select>
+              </div>
             </div>
 
             <div className="evidence-row">
@@ -220,6 +262,17 @@ export default function HomePage() {
               </div>
               {errors.contact && <p className="field-error">{errors.contact}</p>}
             </fieldset>
+
+            <div className="demo-complaint-tools">
+              <div>
+                <strong>Want to see the full journey?</strong>
+                <p>Load a prepared synthetic complaint, then review or edit it before submitting.</p>
+              </div>
+              <button className="demo-complaint-button" type="button" onClick={loadDemoComplaint}>
+                {loadedDemo ? "Load next demo complaint" : "Use a demo complaint"} <ArrowRight size={16} />
+              </button>
+              {loadedDemo && <p className="demo-loaded" role="status">Synthetic demo data · Example {demoIndex === 0 ? DEMO_SCENARIOS.length : demoIndex} of {DEMO_SCENARIOS.length}: {loadedDemo.title}</p>}
+            </div>
 
             {submissionError && <p className="submission-error" role="alert">{submissionError}</p>}
             <button className="submit-button" type="submit" disabled={isSubmitting}>

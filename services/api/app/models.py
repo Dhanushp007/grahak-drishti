@@ -34,6 +34,7 @@ class Complaint(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     company_name: Mapped[str | None] = mapped_column(String(200))
     amount_involved: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    state: Mapped[str | None] = mapped_column(String(80))
     currency: Mapped[str] = mapped_column(
         String(3), nullable=False, default="INR", server_default="INR"
     )
@@ -41,6 +42,9 @@ class Complaint(Base):
         String(32), nullable=False, default="submitted", server_default="submitted"
     )
     submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
 
@@ -251,6 +255,17 @@ class SyntheticConsumer(Base):
     consumer_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     display_name: Mapped[str] = mapped_column(String(120), nullable=False)
     state: Mapped[str] = mapped_column(String(80), nullable=False)
+    synthetic_flag: Mapped[bool] = mapped_column(
+        nullable=False, default=True, server_default="1"
+    )
+
+
+class SyntheticMerchant(Base):
+    __tablename__ = "synthetic_merchants"
+
+    merchant_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    sector: Mapped[str] = mapped_column(String(80), nullable=False)
     synthetic_flag: Mapped[bool] = mapped_column(
         nullable=False, default=True, server_default="1"
     )

@@ -55,8 +55,9 @@ python -m scripts.seed_demo
 
 Use `python -m scripts.seed_demo --reset` only when intentionally resetting local demo complaint and intelligence records. See `data/seed/README.md` for the data-truthfulness boundary.
 
-The seed creates five aggregate scenarios plus deterministic synthetic consumers,
-complaints, signals, analysis records, corroborations, and sample evidence rows.
+The seed creates ten issue niches with 2,000 actual complaints, 20 aggregate
+clusters, 600 synthetic consumers, 30 merchants, 40 signals, analysis records,
+corroborations, and sample evidence rows.
 
 ## Citizen web development
 

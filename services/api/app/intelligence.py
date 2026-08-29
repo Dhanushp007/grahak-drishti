@@ -31,6 +31,10 @@ class CorroborationNotFoundError(Exception):
     pass
 
 
+def _as_int(value: object) -> int:
+    return int(value) if isinstance(value, (int, float, str)) else 0
+
+
 def _confirmation_digest(value: str) -> str:
     secret = get_settings().contact_hash_secret.encode()
     return hmac.new(secret, value.strip().encode(), hashlib.sha256).hexdigest()
@@ -92,11 +96,44 @@ def _create_issue_cluster(
         first_reported_at=now,
         last_reported_at=now,
         trend=[{"month": now.strftime("%b"), "reports": 1}],
-        geography=[],
+        geography=(
+            [{"state": complaint.state, "reports": 1, "evidence_backed": 0}]
+            if complaint.state
+            else []
+        ),
         routing=None,
     )
     session.add(cluster)
     return cluster
+
+
+def _update_cluster_aggregates(
+    cluster: IssueClusterRecord, complaint: Complaint
+) -> None:
+    if complaint.state:
+        geography = list(cluster.geography or [])
+        state_point = next(
+            (point for point in geography if point.get("state") == complaint.state),
+            None,
+        )
+        if state_point is None:
+            geography.append(
+                {"state": complaint.state, "reports": 1, "evidence_backed": 0}
+            )
+        else:
+            state_point["reports"] = _as_int(state_point.get("reports", 0)) + 1
+        cluster.geography = geography
+        cluster.states_affected = len(geography)
+    trend = list(cluster.trend or [])
+    month = complaint.submitted_at.strftime("%b")
+    month_point = next(
+        (point for point in trend if point.get("month") == month), None
+    )
+    if month_point is None:
+        trend.append({"month": month, "reports": 1})
+    else:
+        month_point["reports"] = _as_int(month_point.get("reports", 0)) + 1
+    cluster.trend = trend
 
 
 def analyze_complaint(
@@ -156,6 +193,7 @@ def analyze_complaint(
                 cluster.total_reported_amount or Decimal(0)
             ) + complaint.amount_involved
         cluster.last_reported_at = max(cluster.last_reported_at, complaint.submitted_at)
+        _update_cluster_aggregates(cluster, complaint)
     session.add(record)
     complaint.status = "analyzed"
     session.add(
