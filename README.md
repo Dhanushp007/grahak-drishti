@@ -9,7 +9,10 @@ Consumer intelligence and escalation platform for India's consumer-protection ec
 On Windows, double-click `start-poc.bat` from the repository root. The
 launcher starts PostgreSQL, applies migrations, resets the deterministic demo
 dataset, and opens separate windows for the API, complaint worker, citizen web,
-and government dashboard.
+and government dashboard. Keep the titled `GRAHAK POC Controller` window open
+while using the POC; press `Ctrl+C` in that window to close all four service
+windows together. A hidden watchdog also cleans up the service trees if the
+controller window is closed unexpectedly.
 
 The browser applications will be available at:
 
