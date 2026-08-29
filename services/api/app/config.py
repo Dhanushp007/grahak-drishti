@@ -14,8 +14,13 @@ class Settings:
 
 
 def get_settings() -> Settings:
+    database_url = os.getenv("DATABASE_URL") or DEFAULT_DATABASE_URL
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace(
+            "postgresql://", "postgresql+psycopg://", 1
+        )
     return Settings(
-        database_url=os.getenv("DATABASE_URL") or DEFAULT_DATABASE_URL,
+        database_url=database_url,
         contact_hash_secret=os.getenv("CONTACT_HASH_SECRET")
         or DEFAULT_CONTACT_HASH_SECRET,
     )

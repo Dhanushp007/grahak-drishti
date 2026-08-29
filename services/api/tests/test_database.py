@@ -10,6 +10,15 @@ def test_settings_use_the_local_postgres_default(monkeypatch) -> None:
     assert get_settings().database_url == DEFAULT_DATABASE_URL
 
 
+def test_settings_normalize_supabase_postgres_url(monkeypatch) -> None:
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql://postgres.project:password@example.supabase.co:6543/postgres",
+    )
+
+    assert get_settings().database_url.startswith("postgresql+psycopg://")
+
+
 def test_database_engine_can_open_a_session() -> None:
     engine = create_database_engine("sqlite+pysqlite:///:memory:")
 
