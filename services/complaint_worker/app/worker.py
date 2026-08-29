@@ -84,7 +84,7 @@ def process_pending_events(session: Session, limit: int = 100) -> int:
     )
     processed = 0
     for event in events:
-        claimed = session.execute(
+        claimed_id = session.scalar(
             update(OutboxEvent)
             .where(
                 OutboxEvent.id == event.id,
@@ -92,21 +92,22 @@ def process_pending_events(session: Session, limit: int = 100) -> int:
                 OutboxEvent.claimed_at.is_(None),
             )
             .values(claimed_at=datetime.now(UTC))
-        ).rowcount
+            .returning(OutboxEvent.id)
+        )
         session.commit()
-        if claimed != 1:
+        if claimed_id is None:
             continue
         try:
             process_complaint_event(session, event)
         except Exception:
             session.rollback()
-            event = session.get(OutboxEvent, event.id)
-            if event is None:
+            retry_event = session.get(OutboxEvent, event.id)
+            if retry_event is None:
                 continue
-            event.attempts += 1
-            event.claimed_at = None
-            if event.attempts >= 3:
-                event.processed_at = datetime.now(UTC)
+            retry_event.attempts += 1
+            retry_event.claimed_at = None
+            if retry_event.attempts >= 3:
+                retry_event.processed_at = datetime.now(UTC)
             session.commit()
             continue
         processed += 1

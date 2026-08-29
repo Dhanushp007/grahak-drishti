@@ -3,6 +3,10 @@
 **Audit date:** 2026-08-26  
 **Scope:** Current browser prototype and supporting services
 
+**Status:** Historical snapshot retained for traceability. This audit predates
+PR #19 and does not describe the current implementation. See the README and
+`GRAHAK-DRISHTI_POC_STABILIZATION_PLAN.md` for the current demo status.
+
 ## Current state
 
 GRAHAK-DRISHTI has a working FastAPI complaint intake and tracking slice, a public aggregate issue read, deterministic AI/duplicate/clustering/routing modules, and two Next.js applications. The existing implementation is a strong foundation, but the browser journey currently stops before complaint understanding and evidence-backed corroboration are visible.
