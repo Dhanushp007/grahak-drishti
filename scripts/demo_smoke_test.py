@@ -57,6 +57,7 @@ def wait_for_health() -> None:
             continue
         if status == 200 and body.get("status") == "ok":
             return
+        time.sleep(0.25)
     raise AssertionError("Demo API did not become healthy")
 
 

@@ -29,7 +29,6 @@ testpaths = [
     "services/api/tests",
     "services/ai/tests",
     "services/clustering_worker/tests",
-    "services/ai/tests",
     "services/routing_engine/tests",
     "services/complaint_worker/tests",
     "scripts/tests",

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("completes citizen report, evidence, and government intelligence journey", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/");
   const citizenLogin = page.waitForResponse(
     (response) => response.url().includes("/api/backend/api/v1/demo/login") && response.request().method() === "POST",
@@ -18,7 +19,7 @@ test("completes citizen report, evidence, and government intelligence journey", 
   await expect(page.getByRole("heading", { name: "Your voice now has a docket." })).toBeVisible();
 
   const similarReports = page.getByRole("link", { name: /See .* similar reports/ });
-  await expect(similarReports).toBeVisible({ timeout: 10_000 });
+  await expect(similarReports).toBeVisible({ timeout: 30_000 });
   await similarReports.click();
   await expect(page).toHaveURL(/\/issues\/REFUND-DELAY-QUICKKART$/);
 

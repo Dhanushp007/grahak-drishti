@@ -79,7 +79,7 @@ export default function HomePage() {
   }
 
   async function loadIntelligence(docketNumber, contact) {
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    for (let attempt = 0; attempt < 60; attempt += 1) {
       try {
         const response = await fetch("/api/backend/api/v1/complaints/intelligence", {
           method: "POST",
