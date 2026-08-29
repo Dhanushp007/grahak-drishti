@@ -39,3 +39,10 @@ def store_evidence(
         raise EvidenceStorageError("invalid evidence storage path")
     destination.write_bytes(data)
     return storage_key, safe_name, len(data), hashlib.sha256(data).hexdigest()
+
+
+def remove_evidence(storage_key: str) -> None:
+    root = _storage_root()
+    destination = (root / Path(storage_key).name).resolve()
+    if root in destination.parents and destination.exists():
+        destination.unlink()

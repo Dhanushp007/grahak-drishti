@@ -2,7 +2,7 @@ import argparse
 import time
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from services.ai.app.classifier import ComplaintInput
@@ -75,19 +75,40 @@ def process_pending_events(session: Session, limit: int = 100) -> int:
     events = list(
         session.scalars(
             select(OutboxEvent)
-            .where(OutboxEvent.processed_at.is_(None))
+            .where(
+                OutboxEvent.processed_at.is_(None), OutboxEvent.claimed_at.is_(None)
+            )
             .order_by(OutboxEvent.created_at)
             .limit(limit)
         )
     )
     processed = 0
     for event in events:
+        claimed = session.execute(
+            update(OutboxEvent)
+            .where(
+                OutboxEvent.id == event.id,
+                OutboxEvent.processed_at.is_(None),
+                OutboxEvent.claimed_at.is_(None),
+            )
+            .values(claimed_at=datetime.now(UTC))
+        ).rowcount
+        session.commit()
+        if claimed != 1:
+            continue
         try:
             process_complaint_event(session, event)
         except Exception:
+            session.rollback()
+            event = session.get(OutboxEvent, event.id)
+            if event is None:
+                continue
             event.attempts += 1
+            event.claimed_at = None
+            if event.attempts >= 3:
+                event.processed_at = datetime.now(UTC)
             session.commit()
-            raise
+            continue
         processed += 1
     return processed
 

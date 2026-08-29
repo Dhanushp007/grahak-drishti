@@ -18,6 +18,7 @@ from services.api.app.models import (
     CorroborationRecord,
     EvidenceRecord,
     IssueClusterRecord,
+    OutboxEvent,
     SyntheticConsumer,
     SyntheticSignal,
 )
@@ -310,17 +311,59 @@ SCENARIOS = (
 def seed(reset: bool = False) -> None:
     with SessionLocal() as session:
         if reset:
-            for model in (
-                EvidenceRecord,
-                CorroborationRecord,
-                ConsumerConfirmation,
-                ComplaintAnalysisRecord,
-                Complaint,
-                IssueClusterRecord,
-                SyntheticSignal,
-                SyntheticConsumer,
-            ):
-                session.execute(delete(model))
+            demo_cluster_ids = [str(values["cluster_id"]) for values in SCENARIOS]
+            demo_complaint_ids = [
+                _stable_id(f"complaint-{index}") for index in range(1, 26)
+            ]
+            demo_corroboration_ids = [
+                _stable_id(f"corroboration-{index}")
+                for index in range(2, 26, 2)
+            ]
+            session.execute(
+                delete(EvidenceRecord).where(
+                    EvidenceRecord.corroboration_id.in_(demo_corroboration_ids)
+                )
+            )
+            session.execute(
+                delete(CorroborationRecord).where(
+                    CorroborationRecord.id.in_(demo_corroboration_ids)
+                )
+            )
+            session.execute(
+                delete(ConsumerConfirmation).where(
+                    ConsumerConfirmation.cluster_id.in_(demo_cluster_ids)
+                )
+            )
+            session.execute(
+                delete(ComplaintAnalysisRecord).where(
+                    ComplaintAnalysisRecord.complaint_id.in_(demo_complaint_ids)
+                )
+            )
+            session.execute(
+                delete(OutboxEvent).where(
+                    OutboxEvent.aggregate_id.in_(demo_complaint_ids)
+                )
+            )
+            session.execute(delete(Complaint).where(Complaint.id.in_(demo_complaint_ids)))
+            session.execute(
+                delete(IssueClusterRecord).where(
+                    IssueClusterRecord.cluster_id.in_(demo_cluster_ids)
+                )
+            )
+            session.execute(
+                delete(SyntheticSignal).where(
+                    SyntheticSignal.signal_id.in_(
+                        [_stable_id(f"signal-{index}") for index in range(1, 26)]
+                    )
+                )
+            )
+            session.execute(
+                delete(SyntheticConsumer).where(
+                    SyntheticConsumer.consumer_id.in_(
+                        [_stable_id(f"consumer-{index}") for index in range(1, 26)]
+                    )
+                )
+            )
             session.commit()
         for values in SCENARIOS:
             existing = session.scalar(

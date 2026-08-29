@@ -96,6 +96,7 @@ class OutboxEvent(Base):
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class IssueClusterRecord(Base):
