@@ -290,12 +290,14 @@ jobs:
           cache-dependency-path: apps/citizen-web/package-lock.json
 
       - name: Install dependencies
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           npm ci --prefix apps/citizen-web
           npm ci --prefix apps/admin-dashboard
-          npx --prefix apps/citizen-web playwright install --with-deps chromium
+          (cd apps/citizen-web && npx playwright install --with-deps chromium)
 
       - name: Seed database and start services
         env:
@@ -327,4 +329,6 @@ jobs:
 
       - name: Run browser golden journey
         working-directory: apps/citizen-web
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
         run: npm run e2e
