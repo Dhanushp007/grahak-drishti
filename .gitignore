@@ -12,3 +12,7 @@ node_modules/
 out/
 .demo-storage/
 test-results/
+
+# Keep local root documentation out of the remote application repository.
+/*.md
+!/README.md
