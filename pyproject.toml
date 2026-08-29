@@ -35,6 +35,9 @@ testpaths = [
 ]
 pythonpath = ["."]
 
+[tool.vercel]
+entrypoint = "services.api.app.main:app"
+
 [tool.ruff]
 target-version = "py311"
 line-length = 88
