@@ -44,6 +44,15 @@ def dashboard_overview(session: Session) -> DashboardOverview:
     top_issues = [
         PublicIssueResponse.model_validate(cluster) for cluster in clusters[:5]
     ]
+    signal_strength = (
+        round(
+            sum(float(cluster.severity) for cluster in clusters)
+            / len(clusters)
+            * 100
+        )
+        if clusters
+        else 0
+    )
     return DashboardOverview(
         as_of=datetime.now(UTC).strftime("%d %b %Y, %H:%M UTC"),
         data_label="Synthetic demonstration data",
@@ -74,7 +83,7 @@ def dashboard_overview(session: Session) -> DashboardOverview:
             ),
         ],
         issues=top_issues,
-        signal_strength=82 if clusters else 0,
+        signal_strength=signal_strength,
         synthetic_notice=(
             "Figures are synthetic and are not official government statistics."
         ),

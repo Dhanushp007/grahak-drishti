@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Response, status
@@ -5,7 +6,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from services.api.app.complaints import create_complaint, track_complaint
+from services.api.app.complaints import (
+    ComplaintNotFoundError,
+    _as_utc,
+    create_complaint,
+    list_my_reports,
+    track_complaint,
+    update_complaint,
+)
 from services.api.app.db import get_db
 from services.api.app.issue_schemas import PublicIssueResponse
 from services.api.app.models import ComplaintAnalysisRecord, IssueClusterRecord
@@ -13,7 +21,10 @@ from services.api.app.schemas import (
     ComplaintCreate,
     ComplaintCreated,
     ComplaintIntelligenceResponse,
+    ComplaintReport,
     ComplaintTracking,
+    ComplaintUpdate,
+    ContactRequest,
     TimelineEvent,
     TrackingRequest,
 )
@@ -55,6 +66,52 @@ def track_submitted_complaint(
             )
             for event in events
         ],
+    )
+
+
+@router.post("/my-reports", response_model=list[ComplaintReport])
+def read_my_reports(
+    payload: ContactRequest, session: Annotated[Session, Depends(get_db)]
+) -> list[ComplaintReport]:
+    reports = list_my_reports(session, payload.contact)
+    if not reports:
+        raise ComplaintNotFoundError
+    now = datetime.now(UTC)
+    return [
+        ComplaintReport(
+            docket_number=report.docket_number,
+            description=report.description,
+            company_name=report.company_name,
+            amount_involved=report.amount_involved,
+            state=report.state,
+            status=report.status,
+            submitted_at=report.submitted_at,
+            updated_at=report.updated_at,
+            editable_until=_as_utc(report.submitted_at) + timedelta(hours=48),
+            editable=now < _as_utc(report.submitted_at) + timedelta(hours=48),
+        )
+        for report in reports
+    ]
+
+
+@router.patch("/{docket_number}", response_model=ComplaintReport)
+def edit_submitted_complaint(
+    docket_number: str,
+    payload: ComplaintUpdate,
+    session: Annotated[Session, Depends(get_db)],
+) -> ComplaintReport:
+    complaint = update_complaint(session, docket_number.upper(), payload)
+    return ComplaintReport(
+        docket_number=complaint.docket_number,
+        description=complaint.description,
+        company_name=complaint.company_name,
+        amount_involved=complaint.amount_involved,
+        state=complaint.state,
+        status=complaint.status,
+        submitted_at=complaint.submitted_at,
+        updated_at=complaint.updated_at,
+        editable_until=_as_utc(complaint.submitted_at) + timedelta(hours=48),
+        editable=True,
     )
 
 

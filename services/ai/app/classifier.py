@@ -52,6 +52,36 @@ Rule = tuple[str, tuple[str, ...], str, float]
 
 SECTOR_RULES: tuple[Rule, ...] = (
     (
+        "insurance",
+        ("insurance", "claim", "policy"),
+        "insurance",
+        0.86,
+    ),
+    (
+        "food_delivery",
+        ("food", "meal", "restaurant"),
+        "food delivery",
+        0.86,
+    ),
+    (
+        "travel",
+        ("booking", "travel", "flight", "hotel"),
+        "travel",
+        0.86,
+    ),
+    (
+        "consumer_durables",
+        ("appliance", "warranty", "service centre"),
+        "consumer durables",
+        0.86,
+    ),
+    (
+        "digital_services",
+        ("subscription", "trial", "streaming"),
+        "digital services",
+        0.86,
+    ),
+    (
         "e_commerce",
         ("order", "delivery", "refund", "seller", "product"),
         "e-commerce",
@@ -78,6 +108,36 @@ SECTOR_RULES: tuple[Rule, ...] = (
 )
 
 ISSUE_RULES: tuple[Rule, ...] = (
+    (
+        "food_quality_refund",
+        ("food order", "food quality", "meal", "wrong food"),
+        "food quality or refund issue",
+        0.88,
+    ),
+    (
+        "cancellation_refund",
+        ("cancelled booking", "booking cancellation", "travel booking"),
+        "cancellation refund delay",
+        0.88,
+    ),
+    (
+        "claim_delay",
+        ("insurance claim", "claim is pending", "claim delay"),
+        "insurance claim delay",
+        0.88,
+    ),
+    (
+        "unexpected_service_fee",
+        ("service fee", "bank fee", "account fee"),
+        "unexpected service fee",
+        0.88,
+    ),
+    (
+        "telecom_billing",
+        ("telecom bill", "mobile bill", "bill contains", "service charge"),
+        "unexpected telecom billing",
+        0.88,
+    ),
     (
         "refund_delay",
         ("refund", "money back", "not returned", "return my money"),

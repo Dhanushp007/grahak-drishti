@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { buildComplaintPayload, buildTrackingPayload, validateComplaintForm } from "../lib/complaint.js";
+import { DEMO_SCENARIOS } from "../lib/demo-scenarios.js";
 
 test("builds the API payload with a single normalized contact", () => {
   const payload = buildComplaintPayload({
@@ -32,4 +33,18 @@ test("builds a normalized tracking payload", () => {
     buildTrackingPayload({ docket: " gd-abcd1234efgh ", email: " USER@example.com ", phone: "" }),
     { docket_number: "GD-ABCD1234EFGH", contact: { email: "USER@example.com" } },
   );
+});
+
+test("contains ten complete, distinct demo complaint scenarios", () => {
+  assert.equal(DEMO_SCENARIOS.length, 10);
+  assert.equal(new Set(DEMO_SCENARIOS.map((scenario) => scenario.expectedCluster)).size, 10);
+  for (const scenario of DEMO_SCENARIOS) {
+    assert.ok(scenario.description);
+    assert.ok(scenario.companyName);
+    assert.ok(scenario.amountInvolved);
+    assert.ok(scenario.contact);
+    assert.ok(scenario.expectedIssue);
+    assert.ok(scenario.evidenceType);
+    assert.ok(scenario.routingHint);
+  }
 });

@@ -1,7 +1,8 @@
 import hashlib
 import hmac
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -10,15 +11,30 @@ from sqlalchemy.orm import Session
 from services.api.app.config import get_settings
 from services.api.app.models import (
     Complaint,
+    ComplaintAnalysisRecord,
     ComplaintContact,
     ComplaintStatusEvent,
+    IssueClusterRecord,
     OutboxEvent,
 )
-from services.api.app.schemas import ComplaintCreate, TrackingRequest
+from services.api.app.schemas import (
+    ComplaintCreate,
+    ComplaintUpdate,
+    ContactInput,
+    TrackingRequest,
+)
 
 
 class ComplaintNotFoundError(Exception):
     pass
+
+
+class ComplaintEditWindowExpiredError(Exception):
+    pass
+
+
+def _as_utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value
 
 
 def _contact_digest(contact_value: str) -> str:
@@ -40,9 +56,11 @@ def create_complaint(
         description=payload.description,
         company_name=payload.company_name,
         amount_involved=payload.amount_involved,
+        state=payload.state,
         currency=payload.currency,
         status="submitted",
         submitted_at=now,
+        updated_at=now,
     )
     contact_value, contact_type = payload.contact.normalized()
     trace_id = str(uuid4())
@@ -118,6 +136,98 @@ def track_complaint(
         )
     )
     return complaint, events
+
+
+def list_my_reports(session: Session, contact: ContactInput) -> list[Complaint]:
+    contact_value, _ = contact.normalized()
+    return list(
+        session.scalars(
+            select(Complaint)
+            .join(ComplaintContact, ComplaintContact.complaint_id == Complaint.id)
+            .where(ComplaintContact.contact_digest == _contact_digest(contact_value))
+            .order_by(Complaint.submitted_at.desc())
+        )
+    )
+
+
+def update_complaint(
+    session: Session, docket_number: str, payload: ComplaintUpdate
+) -> Complaint:
+    contact_value, _ = payload.contact.normalized()
+    complaint = session.scalar(
+        select(Complaint)
+        .join(ComplaintContact, ComplaintContact.complaint_id == Complaint.id)
+        .where(
+            Complaint.docket_number == docket_number,
+            ComplaintContact.contact_digest == _contact_digest(contact_value),
+        )
+    )
+    if complaint is None:
+        raise ComplaintNotFoundError
+    now = datetime.now(UTC)
+    if now >= _as_utc(complaint.submitted_at) + timedelta(hours=48):
+        raise ComplaintEditWindowExpiredError
+
+    previous_analysis = session.scalar(
+        select(ComplaintAnalysisRecord).where(
+            ComplaintAnalysisRecord.complaint_id == complaint.id
+        )
+    )
+    if previous_analysis is not None:
+        previous_cluster = (
+            session.scalar(
+                select(IssueClusterRecord).where(
+                    IssueClusterRecord.cluster_key == previous_analysis.cluster_key
+                )
+            )
+            if previous_analysis.cluster_key
+            else None
+        )
+        if previous_cluster is not None:
+            previous_cluster.reported_count = max(
+                previous_cluster.reported_count - 1, 1
+            )
+            if complaint.amount_involved is not None:
+                previous_cluster.total_reported_amount = max(
+                    (previous_cluster.total_reported_amount or Decimal(0))
+                    - complaint.amount_involved,
+                    Decimal(0),
+                )
+        session.delete(previous_analysis)
+
+    complaint.description = payload.description
+    complaint.company_name = payload.company_name
+    complaint.amount_involved = payload.amount_involved
+    complaint.state = payload.state
+    complaint.status = "submitted"
+    complaint.updated_at = now
+    session.add(
+        ComplaintStatusEvent(
+            id=str(uuid4()),
+            complaint_id=complaint.id,
+            status="updated",
+            label="Report updated",
+            message="Your report was updated and queued for a fresh advisory analysis.",
+            occurred_at=now,
+        )
+    )
+    session.add(
+        OutboxEvent(
+            id=str(uuid4()),
+            event_type="complaint.created.v1",
+            aggregate_id=complaint.id,
+            trace_id=str(uuid4()),
+            payload={
+                "event_type": "complaint.created.v1",
+                "aggregate_id": complaint.id,
+                "trace_id": str(uuid4()),
+            },
+            created_at=now,
+        )
+    )
+    session.commit()
+    session.refresh(complaint)
+    return complaint
 
 
 def normalize_phone(value: str) -> str:

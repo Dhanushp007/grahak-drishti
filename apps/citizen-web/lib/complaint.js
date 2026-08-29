@@ -19,6 +19,7 @@ export function buildComplaintPayload(form) {
     description: form.description.trim(),
     company_name: form.companyName.trim() || null,
     amount_involved: form.amountInvolved.trim() || null,
+    ...(form.state?.trim() ? { state: form.state.trim() } : {}),
     contact,
   };
 }

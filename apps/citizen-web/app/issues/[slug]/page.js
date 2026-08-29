@@ -18,6 +18,7 @@ export default function PublicIssuePage() {
   const [filename, setFilename] = useState("");
   const [file, setFile] = useState(null);
   const [explanation, setExplanation] = useState("");
+  const [shareStatus, setShareStatus] = useState("");
   const clusterKey = decodeURIComponent(params.slug);
 
   useEffect(() => {
@@ -75,6 +76,16 @@ export default function PublicIssuePage() {
     }
   }
 
+  async function shareIssue() {
+    setShareStatus("");
+    try {
+      await globalThis.navigator.clipboard.writeText(globalThis.location.href);
+      setShareStatus("Issue link copied.");
+    } catch {
+      setShareStatus("Copy the issue link from your browser address bar.");
+    }
+  }
+
   if (isLoading) return <main className="page-shell issue-state-page"><div className="issue-state"><LoaderCircle className="spin" size={20} /> Loading issue signal...</div></main>;
   if (error || !issue) return <main className="page-shell issue-state-page"><div className="issue-state issue-state-error" role="alert"><span>{error || "Issue data is unavailable right now."}</span><button className="icon-button" type="button" onClick={loadIssue} aria-label="Retry loading issue" title="Retry"><RotateCcw size={17} /></button></div></main>;
 
@@ -94,12 +105,16 @@ export default function PublicIssuePage() {
       </section>
       <section className="issue-detail-grid" aria-label="Issue aggregate metrics">
         <div className="signal-score"><p className="eyebrow">Consumer signal</p><strong>{issue.growth_rate.toLocaleString()}x</strong><span>reported growth</span><p>Public consumer signals help identify recurring and high-impact issues for evidence-based prioritization.</p></div>
-        <div className="metric-grid"><div><Users size={18} /><strong>{issue.reported_count.toLocaleString()}</strong><span>Reported cases</span></div><div><Check size={18} /><strong>{issue.confirmations.toLocaleString()}</strong><span>“I experienced this too”</span></div><div><MapPin size={18} /><strong>{issue.states_affected}</strong><span>States affected</span></div><div><span className="metric-symbol">Rs.</span><strong>{Number(issue.total_reported_amount || 0).toLocaleString()}</strong><span>Reported impact</span></div></div>
+        <div className="metric-grid"><div><Users size={18} /><strong>{issue.reported_count.toLocaleString()}</strong><span>Reported cases</span></div><div><FileCheck2 size={18} /><strong>{issue.evidence_backed_count.toLocaleString()}</strong><span>Evidence-backed</span></div><div><Check size={18} /><strong>{issue.confirmations.toLocaleString()}</strong><span>Corroborations recorded</span></div><div><MapPin size={18} /><strong>{issue.states_affected}</strong><span>States affected</span></div><div><span className="metric-symbol">Rs.</span><strong>{Number(issue.total_reported_amount || 0).toLocaleString()}</strong><span>Reported impact</span></div></div>
+      </section>
+      <section className="issue-context-grid" aria-label="Issue pattern context">
+        <div><p className="eyebrow">Trend</p><strong>{issue.trend?.at(-1)?.reports?.toLocaleString() || 0} reports in the latest period</strong><span>Compared with {issue.trend?.at(-2)?.reports?.toLocaleString() || 0} in the previous period.</span></div>
+        <div><p className="eyebrow">Recommended next step</p><strong>{String(issue.routing?.route || "review").replaceAll("_", " ")}</strong><span>{issue.routing?.reason || "An authorized reviewer should assess this aggregate signal."}</span></div>
       </section>
       <section className="signal-action">
         <div><p className="eyebrow">Add your signal</p><h2>Did this happen to you too?</h2><p>Your confirmation contributes to an aggregate evidence signal. It does not force government action.</p></div>
         {!corroboration ? (
-          <div className="action-buttons"><button className="primary-button" type="button" onClick={startExperience} disabled={hasConfirmed || isConfirming}>{isConfirming ? <><LoaderCircle className="spin" size={17} /> Starting...</> : hasConfirmed ? <><Check size={17} /> Signal added</> : <>I experienced this too <Check size={17} /> </>}</button><button className="icon-button" type="button" aria-label="Share this issue" title="Share this issue"><Share2 size={18} /></button></div>
+          <div className="action-buttons"><button className="primary-button" type="button" onClick={startExperience} disabled={hasConfirmed || isConfirming}>{isConfirming ? <><LoaderCircle className="spin" size={17} /> Starting...</> : hasConfirmed ? <><Check size={17} /> Signal added</> : <>I experienced this too <Check size={17} /> </>}</button><button className="icon-button" type="button" onClick={shareIssue} aria-label="Share this issue" title="Share this issue"><Share2 size={18} /></button>{shareStatus && <span className="share-status" role="status">{shareStatus}</span>}</div>
         ) : hasConfirmed ? (
           <div className="evidence-confirmation"><FileCheck2 size={19} /><div><strong>Demo evidence submitted</strong><span>Recorded for review. It is not legally verified.</span></div></div>
         ) : (

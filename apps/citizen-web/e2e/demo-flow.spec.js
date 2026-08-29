@@ -10,11 +10,8 @@ test("completes citizen report, evidence, and government intelligence journey", 
   await expect((await citizenLogin).status()).toBe(200);
   await expect(page.locator(".demo-session")).toContainText("Demo Citizen");
 
-  await page.getByLabel("What happened?").fill(
-    "I cancelled my QuickKart order 12 days ago. The refund of INR 3499 was confirmed but I still have not received it.",
-  );
-  await page.getByLabel("Company or seller").fill("QuickKart");
-  await page.getByLabel("Amount involved").fill("3499");
+  await page.getByRole("button", { name: "Use a demo complaint" }).click();
+  await expect(page.getByLabel("What happened?")).toHaveValue(/QuickKart/);
   await page.getByRole("button", { name: "Create my docket" }).click();
   await expect(page.getByRole("heading", { name: "Your voice now has a docket." })).toBeVisible();
 
@@ -34,6 +31,15 @@ test("completes citizen report, evidence, and government intelligence journey", 
   });
   await page.getByRole("button", { name: "Submit demo evidence" }).click();
   await expect(page.getByText("Demo evidence submitted")).toBeVisible();
+
+  await page.goto(`${process.env.CITIZEN_BASE_URL || "http://127.0.0.1:3000"}/reports`);
+  await expect(page.getByRole("heading", { name: "My reports." })).toBeVisible();
+  const reportCard = page.locator(".report-card").first();
+  await expect(reportCard.getByRole("button", { name: "Edit report" })).toBeVisible();
+  await reportCard.getByRole("button", { name: "Edit report" }).click();
+  await reportCard.getByLabel("What happened?").fill("The refund is still delayed after my cancellation.");
+  await reportCard.getByRole("button", { name: "Save changes" }).click();
+  await expect(reportCard.locator(".report-description")).toHaveText("The refund is still delayed after my cancellation.");
 
   const adminPage = await page.context().newPage();
   await adminPage.goto(process.env.ADMIN_BASE_URL || "http://127.0.0.1:3001");

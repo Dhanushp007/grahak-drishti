@@ -113,6 +113,10 @@ jobs:
           python -m alembic upgrade head
           test -f ci-migrations.db
           rm ci-migrations.db
+          python -m alembic upgrade head
+          python -m scripts.seed_demo --reset
+          python -m scripts.validate_demo_data
+          rm ci-migrations.db
 
   scale-demo:
     name: Validate synthetic scale simulation
