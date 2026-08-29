@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowRight, Check, FileUp, LoaderCircle, ShieldCheck, UserRoundCheck } from "lucide-react";
 
-import { buildComplaintPayload, validateComplaintForm } from "../lib/complaint.js";
+import { buildComplaintPayload, readApiResponse, validateComplaintForm } from "../lib/complaint.js";
 import { loginAsDemoCitizen } from "../lib/demo.js";
 import { DEMO_SCENARIOS } from "../lib/demo-scenarios.js";
 
@@ -84,10 +84,7 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const body = await response.json();
-      if (!response.ok) {
-        throw new Error(body?.error?.message || "We could not submit your report.");
-      }
+      const body = await readApiResponse(response);
       window.sessionStorage.setItem("gd-demo-contact", payload.contact.email || payload.contact.phone);
       setSubmission(body);
       void loadIntelligence(body.docket_number, payload.contact);

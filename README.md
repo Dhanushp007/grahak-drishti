@@ -98,6 +98,16 @@ Pop-Location
 
 The app exposes the report form at `/` and private docket tracking at `/track`. `API_ORIGIN` is read when Next.js starts or builds so the same-origin API proxy points at the running FastAPI service.
 
+### Vercel deployment
+
+For the citizen app on Vercel, set `API_ORIGIN` to the public HTTPS URL of the deployed FastAPI service, then redeploy. Do not leave it unset: the local default `http://127.0.0.1:8000` is not reachable from Vercel. On the API deployment, set `DATABASE_URL` to the Supabase pooler URL, for example:
+
+```text
+postgresql://postgres.project-id:YOUR_PASSWORD@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
+```
+
+The API automatically selects the `psycopg` SQLAlchemy driver for this URL. URL-encode special characters in the Supabase password, run `python -m alembic upgrade head` against that database, and set a strong `CONTACT_HASH_SECRET`. Keep these values in Vercel Environment Variables for the Production environment; never commit the real password.
+
 Run the backend golden journey against a migrated and seeded local API with:
 
 ```powershell

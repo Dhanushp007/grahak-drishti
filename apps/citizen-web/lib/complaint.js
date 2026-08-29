@@ -1,3 +1,31 @@
+export async function readApiResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  const rawBody = await response.text();
+  let body = null;
+
+  if (contentType.includes("application/json") && rawBody) {
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      body = null;
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      body?.error?.message ||
+        (response.status >= 500
+          ? "The reporting service is temporarily unavailable. Please try again shortly."
+          : "We could not complete that request."),
+    );
+  }
+
+  if (!body) {
+    throw new Error("The reporting service returned an invalid response. Please try again.");
+  }
+  return body;
+}
+
 export function validateComplaintForm(form) {
   const errors = {};
   if (!form.description.trim()) {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, LoaderCircle, LockKeyhole } from "lucide-react";
 
-import { buildTrackingPayload } from "../../lib/complaint.js";
+import { buildTrackingPayload, readApiResponse } from "../../lib/complaint.js";
 
 const initialForm = { docket: "", email: "", phone: "" };
 
@@ -43,8 +43,7 @@ export default function TrackPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildTrackingPayload(form)),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error?.message || "We could not find that report.");
+      const body = await readApiResponse(response);
       setTracking(body);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "We could not find that report.");

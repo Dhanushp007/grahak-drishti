@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildComplaintPayload, buildTrackingPayload, validateComplaintForm } from "../lib/complaint.js";
+import { buildComplaintPayload, buildTrackingPayload, readApiResponse, validateComplaintForm } from "../lib/complaint.js";
 import { DEMO_SCENARIOS } from "../lib/demo-scenarios.js";
 
 test("builds the API payload with a single normalized contact", () => {
@@ -47,4 +47,18 @@ test("contains ten complete, distinct demo complaint scenarios", () => {
     assert.ok(scenario.evidenceType);
     assert.ok(scenario.routingHint);
   }
+});
+
+test("turns a plain-text server failure into a useful request error", async () => {
+  const response = {
+    status: 500,
+    ok: false,
+    headers: { get: () => "text/plain" },
+    text: async () => "Internal Server Error",
+  };
+
+  await assert.rejects(
+    readApiResponse(response),
+    /reporting service is temporarily unavailable/,
+  );
 });
