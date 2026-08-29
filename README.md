@@ -4,6 +4,31 @@ Consumer intelligence and escalation platform for India's consumer-protection ec
 
 ## API development
 
+## Start the complete local POC
+
+On Windows, double-click `start-poc.bat` from the repository root. The
+launcher starts PostgreSQL, applies migrations, resets the deterministic demo
+dataset, and opens separate windows for the API, complaint worker, citizen web,
+and government dashboard. Keep the titled `GRAHAK POC Controller` window open
+while using the POC; press `Ctrl+C` in that window to close all four service
+windows together. A hidden watchdog also cleans up the service trees if the
+controller window is closed unexpectedly.
+
+The browser applications will be available at:
+
+- Citizen web: `http://127.0.0.1:3000`
+- Government dashboard: `http://127.0.0.1:3001`
+- API health: `http://127.0.0.1:8000/health` (or the fallback port printed by the launcher)
+
+If a default port is already in use, the launcher automatically selects the
+next available port from its local fallback range and prints the actual URL.
+
+The launcher prefers Docker Desktop for PostgreSQL. If Docker is unavailable,
+it falls back to a local SQLite `demo-poc.db` so the browser POC can still run.
+Python 3.11 or newer and Node.js/npm are required. It intentionally starts only
+the services needed for the browser POC; Kafka, OpenSearch, MinIO, and Valkey
+remain outside the local demo path.
+
 The FastAPI service exposes complaint intake, private tracking, advisory complaint intelligence, aggregate issues, evidence-backed corroboration, demo login, dashboard overview, and synthetic state analysis.
 
 ```powershell
@@ -47,7 +72,7 @@ Submission writes the private case, initial status event, and versioned `complai
 
 ## Deterministic demo data
 
-After applying migrations, seed the five synthetic issue scenarios:
+After applying migrations, seed the ten synthetic issue niches:
 
 ```powershell
 python -m scripts.seed_demo
