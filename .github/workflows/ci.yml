@@ -299,9 +299,10 @@ jobs:
           npm ci --prefix apps/admin-dashboard
           (cd apps/citizen-web && npx playwright install --with-deps chromium)
 
-      - name: Seed database and start services
+      - name: Seed database, start services, and run browser journey
         env:
           DATABASE_URL: sqlite:///${{ runner.temp }}/grahak-drishti-browser.db
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
         run: |
           set -euo pipefail
           python -m alembic upgrade head
@@ -326,9 +327,4 @@ jobs:
           curl --fail --silent http://127.0.0.1:8003/health >/dev/null
           curl --fail --silent http://127.0.0.1:3005/ >/dev/null
           curl --fail --silent http://127.0.0.1:3006/ >/dev/null
-
-      - name: Run browser golden journey
-        working-directory: apps/citizen-web
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
-        run: npm run e2e
+          (cd apps/citizen-web && npm run e2e)
