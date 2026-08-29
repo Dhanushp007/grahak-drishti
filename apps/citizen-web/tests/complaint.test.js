@@ -50,10 +50,12 @@ test("contains ten complete, distinct demo complaint scenarios", () => {
 });
 
 test("turns a plain-text server failure into a useful request error", async () => {
-  const response = new Response("Internal Server Error", {
+  const response = {
     status: 500,
-    headers: { "content-type": "text/plain" },
-  });
+    ok: false,
+    headers: { get: () => "text/plain" },
+    text: async () => "Internal Server Error",
+  };
 
   await assert.rejects(
     readApiResponse(response),
