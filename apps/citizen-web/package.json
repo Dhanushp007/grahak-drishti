@@ -8,12 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "security": "npm audit --audit-level=high",
     "test": "node --test tests/complaint.test.js",
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@svg-maps/india": "^2.0.0",
     "lucide-react": "^0.468.0",
-    "next": "^15.1.0",
+    "next": "^16.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

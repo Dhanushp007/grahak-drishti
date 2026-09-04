@@ -111,7 +111,7 @@ export default function ReportsPage() {
         <section className="reports-list" aria-live="polite">
           {error && <div className="issue-state issue-state-error" role="alert"><span>{error}</span><button className="icon-button" type="button" onClick={() => activeContact && loadReports(activeContact)} aria-label="Retry loading reports" title="Retry"><RotateCcw size={17} /></button></div>}
           {!isLoading && !error && activeContact && reports.length === 0 && <div className="issue-state">No private reports were found for this contact.</div>}
-          {!activeContact && !isLoading && !error && <div className="reports-empty"><Clock3 size={20} /><span>Your submitted reports will appear here.</span></div>}
+          {!activeContact && !isLoading && !error && <div className="reports-empty"><Clock3 size={20} /><span>Enter the contact used for a report to load your private cases.</span><a href="/login?returnTo=%2Freport">File a case <ArrowLeft size={14} className="turn-right" /></a></div>}
           {reports.map((report) => (
             <article className="report-card" key={report.docket_number}>
               <div className="report-card-header"><div><p className="eyebrow">Docket</p><h2>{report.docket_number}</h2></div><span className={`report-status ${report.status}`}>{report.status}</span></div>

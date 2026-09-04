@@ -1,9 +1,7 @@
+import { readApiResponse } from "./complaint.js";
+
 async function readDemoLogin(response) {
-  const body = await response.json();
-  if (!response.ok) {
-    throw new Error(body?.error?.message || "Demo access is unavailable right now.");
-  }
-  return body;
+  return readApiResponse(response);
 }
 
 export async function loginAsDemoCitizen() {
