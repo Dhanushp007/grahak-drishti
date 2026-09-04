@@ -1,4 +1,6 @@
-const apiOrigin = process.env.API_ORIGIN || "http://127.0.0.1:8000";
+const apiOrigin = (process.env.API_ORIGIN || "http://127.0.0.1:8000")
+  .trim()
+  .replace(/\/+$/, "");
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },

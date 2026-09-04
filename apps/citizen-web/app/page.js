@@ -182,7 +182,7 @@ export default function HomePage() {
               <svg viewBox={indiaMap.viewBox}>
                 {indiaMap.locations.map((location) => {
                   const signal = stateSignals[location.id] || 10;
-                  return <path className={`india-state signal-level-${signalLevel(signal)} ${selectedState === location.id ? "is-selected" : ""}`} d={location.path} key={location.id} tabIndex="0" role="button" aria-label={`Show ${location.name} case status`} onClick={() => selectState(location.id)} onMouseEnter={() => setHoveredState(location.id)} onMouseLeave={() => setHoveredState(null)} onFocus={() => setHoveredState(location.id)} onBlur={() => setHoveredState(null)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectState(location.id); } }}><title>{location.name}: {signal} signal strength</title></path>;
+                  return <path className={`india-state signal-level-${signalLevel(signal)} ${selectedState === location.id ? "is-selected" : ""}`} d={location.path} key={location.id} tabIndex="0" role="button" aria-label={`Show ${location.name} case status`} onClick={() => selectState(location.id)} onMouseEnter={() => setHoveredState(location.id)} onMouseLeave={() => setHoveredState(null)} onFocus={() => setHoveredState(location.id)} onBlur={() => setHoveredState(null)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectState(location.id); } }} />;
                 })}
                 {indiaMap.locations.map((location) => {
                   const label = stateMapLabels[location.id];
