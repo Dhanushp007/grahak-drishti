@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop"
 $Root = $PSScriptRoot
 $ComposeFile = Join-Path $Root "infrastructure\docker-compose.yml"
+$EnvFile = Join-Path $Root ".env"
+$PythonExe = Join-Path $Root ".venv\Scripts\python.exe"
 $DatabaseUrl = "postgresql+psycopg://grahak:grahak_dev@127.0.0.1:5432/grahak_drishti"
 $ContactHashSecret = "local-development-contact-hash-secret"
 
@@ -20,6 +22,25 @@ function Invoke-CheckedCommand([string]$FilePath, [string[]]$Arguments, [string]
     }
 }
 
+function Import-DotEnv([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    foreach ($line in Get-Content -LiteralPath $Path) {
+        $trimmed = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith("#")) { continue }
+        $parts = $trimmed -split "=", 2
+        if ($parts.Count -ne 2) { continue }
+        $name = $parts[0].Trim()
+        if ($name -notmatch "^[A-Za-z_][A-Za-z0-9_]*$") { continue }
+        $value = $parts[1].Trim()
+        if ($value.Length -ge 2 -and (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'")))) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
+        if (-not (Test-Path "Env:$name")) {
+            Set-Item -Path "Env:$name" -Value $value
+        }
+    }
+}
+
 function Stop-ServiceProcesses {
     foreach ($process in @($script:ServiceProcesses)) {
         if ($null -ne $process -and -not $process.HasExited) {
@@ -29,9 +50,14 @@ function Stop-ServiceProcesses {
     $script:ServiceProcesses = @()
 }
 
-if (-not (Get-Command python.exe -ErrorAction SilentlyContinue)) {
-    throw "Python 3.11 or newer is required and must be available as python."
+if (-not (Test-Path -LiteralPath $PythonExe)) {
+    $pythonCommand = Get-Command python.exe -ErrorAction SilentlyContinue
+    if ($null -eq $pythonCommand) {
+        throw "Python 3.11 or newer is required and must be available as python."
+    }
+    $PythonExe = $pythonCommand.Source
 }
+$PythonCommand = '"' + $PythonExe + '"'
 if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) {
     throw "Node.js and npm are required and must be available as npm."
 }
@@ -47,6 +73,7 @@ if ($ApiPort -ne 8000) { Write-Host "Port 8000 is busy. API will use $ApiPort." 
 
 Push-Location $Root
 try {
+    Import-DotEnv $EnvFile
     $docker = Get-Command docker.exe -ErrorAction SilentlyContinue
     $postgresReady = $false
     if ($null -ne $docker) {
@@ -71,9 +98,9 @@ try {
     $env:CONTACT_HASH_SECRET = $ContactHashSecret
 
     Write-Host "Applying database migrations..."
-    Invoke-CheckedCommand "python.exe" @("-m", "alembic", "upgrade", "head") $Root
+    Invoke-CheckedCommand $PythonExe @("-m", "alembic", "upgrade", "head") $Root
     Write-Host "Restoring deterministic synthetic demo data..."
-    Invoke-CheckedCommand "python.exe" @("-m", "scripts.seed_demo", "--reset") $Root
+    Invoke-CheckedCommand $PythonExe @("-m", "scripts.seed_demo", "--reset") $Root
 
     $citizenNodeModules = Join-Path $Root "apps\citizen-web\node_modules"
     if (-not (Test-Path $citizenNodeModules)) {
@@ -87,10 +114,10 @@ try {
     }
 
     $script:ServiceProcesses = @(
-        (Start-Process cmd.exe -WorkingDirectory $Root -ArgumentList "/k", "title GRAHAK API && set DATABASE_URL=$DatabaseUrl && set CONTACT_HASH_SECRET=$ContactHashSecret && python -m uvicorn services.api.app.main:app --host 127.0.0.1 --port $ApiPort" -PassThru),
-        (Start-Process cmd.exe -WorkingDirectory $Root -ArgumentList "/k", "title GRAHAK Complaint Worker && set DATABASE_URL=$DatabaseUrl && set CONTACT_HASH_SECRET=$ContactHashSecret && python -m services.complaint_worker.app.worker --interval 0.1" -PassThru),
-        (Start-Process cmd.exe -WorkingDirectory (Join-Path $Root "apps\citizen-web") -ArgumentList "/k", "title GRAHAK Citizen Web && set API_ORIGIN=$ApiOrigin && npm run dev -- --port $CitizenPort" -PassThru),
-        (Start-Process cmd.exe -WorkingDirectory (Join-Path $Root "apps\admin-dashboard") -ArgumentList "/k", "title GRAHAK Government Dashboard && set API_ORIGIN=$ApiOrigin && npm run dev -- --port $AdminPort" -PassThru)
+        (Start-Process cmd.exe -WorkingDirectory $Root -ArgumentList "/k", "title GRAHAK API && set `"DATABASE_URL=$DatabaseUrl`" && set `"CONTACT_HASH_SECRET=$ContactHashSecret`" && $PythonCommand -m uvicorn services.api.app.main:app --host 127.0.0.1 --port $ApiPort" -PassThru),
+        (Start-Process cmd.exe -WorkingDirectory $Root -ArgumentList "/k", "title GRAHAK Complaint Worker && set `"DATABASE_URL=$DatabaseUrl`" && set `"CONTACT_HASH_SECRET=$ContactHashSecret`" && $PythonCommand -m services.complaint_worker.app.worker --interval 0.1" -PassThru),
+        (Start-Process cmd.exe -WorkingDirectory (Join-Path $Root "apps\citizen-web") -ArgumentList "/k", "title GRAHAK Citizen Web && set `"API_ORIGIN=$ApiOrigin`" && npm run dev -- --port $CitizenPort" -PassThru),
+        (Start-Process cmd.exe -WorkingDirectory (Join-Path $Root "apps\admin-dashboard") -ArgumentList "/k", "title GRAHAK Government Dashboard && set `"API_ORIGIN=$ApiOrigin`" && npm run dev -- --port $AdminPort" -PassThru)
     )
     $watchPath = Join-Path $Root "stop-poc-watch.ps1"
     $servicePids = ($script:ServiceProcesses | ForEach-Object { $_.Id }) -join ","

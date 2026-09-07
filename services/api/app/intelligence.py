@@ -137,7 +137,7 @@ def _update_cluster_aggregates(
 
 
 def analyze_complaint(
-    session: Session, complaint: Complaint
+    session: Session, complaint: Complaint, *, include_aggregate: bool = True
 ) -> tuple[ComplaintAnalysisRecord, IssueClusterRecord | None]:
     existing = session.scalar(
         select(ComplaintAnalysisRecord).where(
@@ -164,14 +164,17 @@ def analyze_complaint(
         )
     )
     dark_pattern = analyze_dark_pattern(complaint.description)
-    cluster = _find_matching_cluster(
-        session, analysis.issue.value, analysis.company_name
+    cluster = (
+        _find_matching_cluster(session, analysis.issue.value, analysis.company_name)
+        if include_aggregate
+        else None
     )
     created_cluster = False
-    if cluster is None:
+    if include_aggregate and cluster is None:
         cluster = _create_issue_cluster(session, complaint, analysis)
         created_cluster = True
-    if dark_pattern.status == "potential_concern":
+    if include_aggregate and dark_pattern.status == "potential_concern":
+        assert cluster is not None
         cluster.potential_dark_pattern_count += 1
     routing = recommend_route(analysis, dark_pattern)
     now = datetime.now(UTC)
@@ -183,10 +186,13 @@ def analyze_complaint(
             "classification": analysis.model_dump(mode="json"),
             "dark_pattern": dark_pattern.model_dump(mode="json"),
             "routing": routing.model_dump(mode="json"),
+            "aggregate_intelligence": include_aggregate,
+            "public_signal": "enabled" if include_aggregate else "not_requested",
         },
         analyzed_at=now,
     )
-    if not created_cluster:
+    if include_aggregate and not created_cluster:
+        assert cluster is not None
         cluster.reported_count += 1
         if complaint.amount_involved is not None:
             cluster.total_reported_amount = (

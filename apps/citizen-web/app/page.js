@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, FileUp, LoaderCircle, ShieldCheck, UserRoundCheck } from "lucide-react";
+import { ArrowRight, Check, FileUp, Keyboard, LoaderCircle, Mic, ShieldCheck, UserRoundCheck } from "lucide-react";
 
+import VoiceIntake from "../components/voice-intake.js";
 import { buildComplaintPayload, readApiResponse, validateComplaintForm } from "../lib/complaint.js";
 import { loginAsDemoCitizen } from "../lib/demo.js";
 import { DEMO_SCENARIOS } from "../lib/demo-scenarios.js";
@@ -28,6 +29,7 @@ export default function HomePage() {
   const [loginError, setLoginError] = useState("");
   const [demoIndex, setDemoIndex] = useState(0);
   const [loadedDemo, setLoadedDemo] = useState(null);
+  const [intakeMode, setIntakeMode] = useState("text");
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -68,17 +70,11 @@ export default function HomePage() {
     setSubmissionError("");
   }
 
-  async function submitComplaint(event) {
-    event.preventDefault();
-    const validationErrors = validateComplaintForm(form);
-    setErrors(validationErrors);
-    setSubmissionError("");
-    if (Object.keys(validationErrors).length > 0) return;
-
+  async function submitPayload(payload) {
     setIsSubmitting(true);
     setIntelligence(null);
+    setSubmissionError("");
     try {
-      const payload = buildComplaintPayload(form);
       const response = await fetch("/api/backend/api/v1/complaints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,8 +90,21 @@ export default function HomePage() {
           ? error.message
           : "We could not submit your report. Please try again.",
       );
+      throw error;
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function submitComplaint(event) {
+    event.preventDefault();
+    const validationErrors = validateComplaintForm(form);
+    setErrors(validationErrors);
+    setSubmissionError("");
+    if (Object.keys(validationErrors).length > 0) return;
+    try {
+      await submitPayload(buildComplaintPayload(form));
+    } catch {
     }
   }
 
@@ -206,7 +215,12 @@ export default function HomePage() {
             <span className="required-note">* Required</span>
           </div>
 
-          <form onSubmit={submitComplaint} noValidate>
+          <div className="intake-mode-toggle" role="tablist" aria-label="Choose complaint intake mode">
+            <button type="button" role="tab" aria-selected={intakeMode === "text"} className={intakeMode === "text" ? "intake-mode-active" : ""} onClick={() => setIntakeMode("text")}><Keyboard size={15} /> Write</button>
+            <button type="button" role="tab" aria-selected={intakeMode === "voice"} className={intakeMode === "voice" ? "intake-mode-active" : ""} onClick={() => setIntakeMode("voice")}><Mic size={15} /> Speak</button>
+          </div>
+
+          {intakeMode === "voice" ? <VoiceIntake onSubmitDraft={submitPayload} onUseText={() => setIntakeMode("text")} /> : <form onSubmit={submitComplaint} noValidate>
             <div className="field-group">
               <label htmlFor="description">What happened? <span>*</span></label>
               <textarea
@@ -276,7 +290,7 @@ export default function HomePage() {
               {isSubmitting ? <><LoaderCircle className="spin" size={18} /> Sending securely...</> : <>Create my docket <ArrowRight size={18} /></>}
             </button>
             <p className="form-footnote">By submitting, you start a private case. Public issue intelligence never shows your personal details.</p>
-          </form>
+          </form>}
         </div>
       </section>
 

@@ -9,7 +9,12 @@ from sqlalchemy.pool import StaticPool
 
 from services.api.app.db import Base, get_db
 from services.api.app.main import app
-from services.api.app.models import Complaint, ComplaintStatusEvent, OutboxEvent
+from services.api.app.models import (
+    Complaint,
+    ComplaintIntakeRecord,
+    ComplaintStatusEvent,
+    OutboxEvent,
+)
 from services.complaint_worker.app.worker import process_pending_events
 
 
@@ -42,6 +47,22 @@ def complaint_payload() -> dict[str, object]:
         "company_name": "Example Seller",
         "amount_involved": "1499.00",
         "contact": {"email": "Consumer@Example.com"},
+    }
+
+
+def rich_complaint_payload(*, aggregate_intelligence: bool = True) -> dict[str, object]:
+    return {
+        **complaint_payload(),
+        "intake": {
+            "complaint": {"description": "Refund has not arrived after cancellation."},
+            "consumer": {"contact": {"email": "consumer@example.com"}},
+            "business": {"company_name": "Example Seller"},
+            "transaction": {"amount_disputed": "1499.00"},
+            "consents": {
+                "case_processing": True,
+                "aggregate_intelligence": aggregate_intelligence,
+            },
+        },
     }
 
 
@@ -157,6 +178,32 @@ def test_initial_case_event_and_outbox_are_written_together(client: TestClient) 
             )
             == 1
         )
+    finally:
+        session.close()
+
+
+def test_confirmed_rich_intake_is_stored_atomically(client: TestClient) -> None:
+    response = client.post("/api/v1/complaints", json=rich_complaint_payload())
+    assert response.status_code == 201
+
+    override = app.dependency_overrides[get_db]
+    session = next(override())
+    try:
+        complaint = session.scalar(
+            select(Complaint).where(
+                Complaint.docket_number == response.json()["docket_number"]
+            )
+        )
+        assert complaint is not None
+        intake = session.scalar(
+            select(ComplaintIntakeRecord).where(
+                ComplaintIntakeRecord.complaint_id == complaint.id
+            )
+        )
+        assert intake is not None
+        assert intake.aggregate_intelligence is True
+        assert intake.payload["business"]["company_name"] == "Example Seller"
+        assert "transcript" not in intake.payload
     finally:
         session.close()
 

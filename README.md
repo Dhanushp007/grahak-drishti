@@ -154,6 +154,35 @@ Pop-Location
 The browser test covers demo login, complaint submission, worker-produced
 intelligence, issue navigation, real file upload, and government drill-down.
 
+### Voice-assisted rich intake
+
+The citizen app provides an optional `Speak` mode for conversational complaint
+intake. Gemini Live handles the temporary voice session, while a separate
+structured Gemini request prepares the final rich draft for review. The browser
+receives a single-use ephemeral token from `POST /api/v1/intake/live-token`;
+the long-lived Gemini key remains on the API.
+
+Configure the API before starting the citizen app when testing voice intake:
+
+```powershell
+$env:GEMINI_API_KEY = "your-key"
+$env:GEMINI_LIVE_MODEL = "gemini-3.1-flash-live-preview"
+$env:GEMINI_EXTRACTION_MODEL = "gemini-3.8-flash"
+```
+
+The default models are configurable because Gemini Live and ephemeral tokens
+are Preview features. `GEMINI_TOKEN_TTL_SECONDS`,
+`GEMINI_SESSION_TTL_SECONDS`, and `GEMINI_MAX_TRANSCRIPT_CHARS` constrain the
+temporary session and normalization request. If Gemini is not configured, the
+existing text form remains available.
+
+Drafts stay in browser memory until the consumer confirms them. The first
+version does not retain raw audio or unfinished transcripts. A confirmed rich
+payload is stored privately with the complaint, and `aggregate_intelligence`
+consent controls whether asynchronous processing may update public aggregate
+issue signals. Voice cannot submit a complaint or contact an official
+authority; the user must review and press `Create my docket`.
+
 ## Database development
 
 The API uses PostgreSQL with pgvector as its transactional database. Start the local database with:

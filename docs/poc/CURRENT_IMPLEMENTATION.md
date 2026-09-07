@@ -385,6 +385,36 @@ Routing is deterministic and advisory. Recommendations include company grievance
 
 The current demo data includes routing objects with route, confidence, reason, advisory flag, and source. These are navigation/recommendation outputs, not live government submissions or legal decisions.
 
+### 7.5 Voice-assisted rich intake
+
+The citizen app has an optional `Speak` mode backed by Gemini Live. The
+browser requests a short-lived single-use token from
+`POST /api/v1/intake/live-token`, connects directly to Gemini over the Live
+WebSocket, and streams microphone PCM only for the active session. Final
+normalization uses `POST /api/v1/intake/normalize` and validates the returned
+rich payload with the same Pydantic contract used by complaint creation.
+
+The draft covers the sections in `data/seed/sample-complaint-intake.json`,
+including consumer contact/address, incident, business, transaction,
+resolution attempts, remedy, escalation, evidence metadata, consent, data
+quality, and field provenance/confidence. The model can update only an
+allowlisted draft path; it has no submission or authority-contact tool.
+
+The review screen requires a description, one tracking contact, and explicit
+case-processing consent. It allows the consumer to opt into aggregate issue
+intelligence, but official authority sharing is not automatic. A confirmed
+rich payload is persisted in the private `complaint_intake_records` table,
+without raw audio or unfinished transcript retention. When aggregate consent
+is false, the asynchronous worker still produces private advisory analysis but
+does not create or update a public issue cluster.
+
+Gemini Live and ephemeral-token support are Preview features. The API key is
+read only from `GEMINI_API_KEY`; model names and temporary-session limits are
+configured with `GEMINI_LIVE_MODEL`, `GEMINI_EXTRACTION_MODEL`,
+`GEMINI_TOKEN_TTL_SECONDS`, `GEMINI_SESSION_TTL_SECONDS`, and
+`GEMINI_MAX_TRANSCRIPT_CHARS`. Microphone denial, provider failure, or missing
+configuration leaves the existing text complaint form available.
+
 ## 8. Workers and Event Processing
 
 ### 8.1 Complaint worker
