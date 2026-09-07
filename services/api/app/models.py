@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -189,6 +190,41 @@ class ComplaintAnalysisRecord(Base):
     cluster_key: Mapped[str | None] = mapped_column(String(160))
     analysis: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
     analyzed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class ComplaintIntakeRecord(Base):
+    __tablename__ = "complaint_intake_records"
+    __table_args__ = (
+        CheckConstraint(
+            "aggregate_intelligence IN (TRUE, FALSE)",
+            name="ck_complaint_intake_aggregate_intelligence",
+        ),
+        Index("ix_complaint_intake_records_aggregate", "aggregate_intelligence"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    complaint_id: Mapped[str] = mapped_column(
+        ForeignKey("complaints.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    schema_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    aggregate_intelligence: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    share_with_official_authority: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    provider: Mapped[str | None] = mapped_column(String(32))
+    model: Mapped[str | None] = mapped_column(String(120))
+    consumer_edited: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    confirmed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
 

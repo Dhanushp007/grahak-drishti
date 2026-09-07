@@ -1,8 +1,10 @@
 import hashlib
 import hmac
 import re
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -13,6 +15,7 @@ from services.api.app.models import (
     Complaint,
     ComplaintAnalysisRecord,
     ComplaintContact,
+    ComplaintIntakeRecord,
     ComplaintStatusEvent,
     IssueClusterRecord,
     OutboxEvent,
@@ -85,6 +88,24 @@ def create_complaint(
                 contact_digest=_contact_digest(contact_value),
             )
         )
+        if payload.intake is not None:
+            intake_payload = payload.intake.model_dump(mode="json")
+            session.add(
+                ComplaintIntakeRecord(
+                    id=str(uuid4()),
+                    complaint_id=complaint.id,
+                    schema_version=payload.intake.schema_version,
+                    payload=intake_payload,
+                    aggregate_intelligence=payload.intake.consents.aggregate_intelligence,
+                    share_with_official_authority=(
+                        payload.intake.consents.share_with_official_authority
+                    ),
+                    provider=payload.intake.provider,
+                    model=payload.intake.model,
+                    confirmed_at=now,
+                    updated_at=now,
+                )
+            )
         session.add(
             ComplaintStatusEvent(
                 id=str(uuid4()),
@@ -201,6 +222,28 @@ def update_complaint(
     complaint.state = payload.state
     complaint.status = "submitted"
     complaint.updated_at = now
+    intake_record = session.scalar(
+        select(ComplaintIntakeRecord).where(
+            ComplaintIntakeRecord.complaint_id == complaint.id
+        )
+    )
+    if intake_record is not None:
+        intake_payload = deepcopy(cast(dict[str, Any], intake_record.payload))
+        intake_payload.setdefault("complaint", {})["description"] = payload.description
+        intake_payload.setdefault("business", {})["company_name"] = (
+            payload.company_name
+        )
+        intake_payload.setdefault("transaction", {})["amount_disputed"] = (
+            str(payload.amount_involved)
+            if payload.amount_involved is not None
+            else None
+        )
+        intake_payload.setdefault("consumer", {}).setdefault("address", {})[
+            "state"
+        ] = payload.state
+        intake_record.payload = intake_payload
+        intake_record.consumer_edited = True
+        intake_record.updated_at = now
     session.add(
         ComplaintStatusEvent(
             id=str(uuid4()),

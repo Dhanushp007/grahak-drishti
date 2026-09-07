@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from services.api.app.intake_schemas import IntakeDraft
 from services.api.app.issue_schemas import PublicIssueResponse
 
 
@@ -48,6 +49,7 @@ class ComplaintCreate(BaseModel):
     state: str | None = Field(default=None, max_length=80)
     currency: Literal["INR"] = "INR"
     contact: ContactInput
+    intake: IntakeDraft | None = None
 
     @model_validator(mode="after")
     def normalize_text(self) -> "ComplaintCreate":
@@ -58,6 +60,20 @@ class ComplaintCreate(BaseModel):
             self.company_name = self.company_name.strip() or None
         if self.state is not None:
             self.state = self.state.strip() or None
+        if self.intake is not None:
+            if not self.intake.consents.case_processing:
+                raise ValueError("rich intake requires case-processing consent")
+            rich_contact = self.intake.consumer.contact
+            if (
+                self.contact.email is not None
+                and rich_contact.email != self.contact.email
+            ):
+                raise ValueError("complaint contact must match the rich intake contact")
+            if (
+                self.contact.phone is not None
+                and rich_contact.phone != self.contact.phone
+            ):
+                raise ValueError("complaint contact must match the rich intake contact")
         return self
 
 

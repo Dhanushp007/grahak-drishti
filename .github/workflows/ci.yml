@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check required paths
         shell: bash
@@ -74,13 +74,12 @@ jobs:
     needs: repository-structure
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Install API dependencies
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
@@ -112,13 +111,12 @@ jobs:
     needs: python
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Install API dependencies
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
@@ -132,13 +130,12 @@ jobs:
     needs: python
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Install API dependencies
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
@@ -161,13 +158,12 @@ jobs:
       DEMO_BASE_URL: http://127.0.0.1:8002
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Install API dependencies
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
@@ -198,8 +194,8 @@ jobs:
           curl --fail --silent http://127.0.0.1:8002/health >/dev/null
           python scripts/demo_smoke_test.py
 
-  citizen-web-contracts:
-    name: Test citizen web contracts
+  citizen-web:
+    name: Validate citizen web
     runs-on: ubuntu-latest
     needs: repository-structure
     defaults:
@@ -207,10 +203,10 @@ jobs:
         working-directory: apps/citizen-web
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm
@@ -222,56 +218,14 @@ jobs:
       - name: Test citizen web contracts
         run: npm test
 
-  citizen-web-lint:
-    name: Lint citizen web
-    runs-on: ubuntu-latest
-    needs: citizen-web-contracts
-    defaults:
-      run:
-        working-directory: apps/citizen-web
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: apps/citizen-web/package-lock.json
-
-      - name: Install citizen web dependencies
-        run: npm ci
-
       - name: Lint citizen web
         run: npm run lint
-
-  citizen-web-build:
-    name: Build citizen web
-    runs-on: ubuntu-latest
-    needs: citizen-web-lint
-    defaults:
-      run:
-        working-directory: apps/citizen-web
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: apps/citizen-web/package-lock.json
-
-      - name: Install citizen web dependencies
-        run: npm ci
 
       - name: Build citizen web
         run: npm run build
 
-  admin-dashboard-contracts:
-    name: Test admin dashboard contracts
+  admin-dashboard:
+    name: Validate admin dashboard
     runs-on: ubuntu-latest
     needs: repository-structure
     defaults:
@@ -279,10 +233,10 @@ jobs:
         working-directory: apps/admin-dashboard
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm
@@ -294,50 +248,8 @@ jobs:
       - name: Test dashboard contracts
         run: npm test
 
-  admin-dashboard-lint:
-    name: Lint admin dashboard
-    runs-on: ubuntu-latest
-    needs: admin-dashboard-contracts
-    defaults:
-      run:
-        working-directory: apps/admin-dashboard
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: apps/admin-dashboard/package-lock.json
-
-      - name: Install admin dashboard dependencies
-        run: npm ci
-
       - name: Lint admin dashboard
         run: npm run lint
-
-  admin-dashboard-build:
-    name: Build admin dashboard
-    runs-on: ubuntu-latest
-    needs: admin-dashboard-lint
-    defaults:
-      run:
-        working-directory: apps/admin-dashboard
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: apps/admin-dashboard/package-lock.json
-
-      - name: Install admin dashboard dependencies
-        run: npm ci
 
       - name: Build admin dashboard
         run: npm run build
@@ -345,24 +257,23 @@ jobs:
   security:
     name: Run security gates
     runs-on: ubuntu-latest
-    needs: [python, citizen-web-build, admin-dashboard-build]
+    needs: [python, citizen-web, admin-dashboard]
     permissions:
       contents: read
       security-events: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "24"
           cache: npm
@@ -412,23 +323,22 @@ jobs:
   browser-e2e:
     name: Validate browser golden journey
     runs-on: ubuntu-latest
-    needs: [python, citizen-web-build, admin-dashboard-build, security]
+    needs: [python, citizen-web, admin-dashboard, security]
     env:
       API_ORIGIN: http://127.0.0.1:8003
       CITIZEN_BASE_URL: http://127.0.0.1:3005
       ADMIN_BASE_URL: http://127.0.0.1:3006
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm

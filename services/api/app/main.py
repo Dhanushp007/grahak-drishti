@@ -11,6 +11,7 @@ from services.api.app.complaints import (
 )
 from services.api.app.dashboard_routes import router as dashboard_router
 from services.api.app.demo_routes import router as demo_router
+from services.api.app.intake_routes import router as intake_router
 from services.api.app.intelligence import CorroborationNotFoundError
 from services.api.app.issue_routes import router as issue_router
 from services.api.app.issues import IssueNotFoundError
@@ -33,6 +34,7 @@ app.include_router(complaint_router)
 app.include_router(issue_router)
 app.include_router(dashboard_router)
 app.include_router(demo_router)
+app.include_router(intake_router)
 
 
 @app.exception_handler(ComplaintNotFoundError)

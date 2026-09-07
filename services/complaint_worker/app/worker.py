@@ -9,7 +9,12 @@ from services.ai.app.classifier import ComplaintInput
 from services.ai.app.duplicates import build_complaint_record, detect_duplicate
 from services.api.app.db import SessionLocal
 from services.api.app.intelligence import analyze_complaint
-from services.api.app.models import Complaint, ComplaintAnalysisRecord, OutboxEvent
+from services.api.app.models import (
+    Complaint,
+    ComplaintAnalysisRecord,
+    ComplaintIntakeRecord,
+    OutboxEvent,
+)
 
 
 def _duplicate_summary(session: Session, complaint: Complaint) -> dict[str, object]:
@@ -60,7 +65,18 @@ def process_complaint_event(session: Session, event: OutboxEvent) -> None:
         )
     )
     if existing is None:
-        analysis, _ = analyze_complaint(session, complaint)
+        intake = session.scalar(
+            select(ComplaintIntakeRecord).where(
+                ComplaintIntakeRecord.complaint_id == complaint.id
+            )
+        )
+        analysis, _ = analyze_complaint(
+            session,
+            complaint,
+            include_aggregate=(
+                intake.aggregate_intelligence if intake is not None else True
+            ),
+        )
         analysis.analysis = {
             **analysis.analysis,
             "duplicate_detection": _duplicate_summary(session, complaint),

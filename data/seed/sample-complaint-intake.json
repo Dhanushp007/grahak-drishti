@@ -1,0 +1,147 @@
+{
+  "schema_version": "complaint-intake.v1",
+  "record_type": "complaint_intake_payload",
+  "synthetic_flag": true,
+  "environment": "local-demo",
+  "complaint": {
+    "docket_number": "GD-DEMO12345678",
+    "description": "I cancelled a wireless headphone order on 20 August 2026. The seller confirmed the cancellation, but the INR 2,499 refund has not reached my account after seven days.",
+    "language": "en",
+    "source_channel": "web",
+    "submitted_at": "2026-08-27T10:30:00Z",
+    "self_assessed_priority": "medium"
+  },
+  "consumer": {
+    "consumer_type": "individual",
+    "full_name": "Aarav Example",
+    "contact": {
+      "email": "aarav.example@example.test",
+      "phone": null,
+      "preferred_method": "email"
+    },
+    "address": {
+      "line1": "101 Demo Lane",
+      "line2": "Sample Heights",
+      "city": "Pune",
+      "district": "Pune",
+      "state": "Maharashtra",
+      "postal_code": "400000"
+    }
+  },
+  "incident": {
+    "sector": "e-commerce",
+    "category": "refund delay",
+    "subcategory": "cancelled order refund not received",
+    "occurred_on": "2026-08-20",
+    "discovered_on": "2026-08-27",
+    "date_precision": "exact",
+    "is_recurring": false,
+    "urgency": "medium",
+    "what_was_promised": "A full refund after the cancelled order was accepted.",
+    "what_happened": "The cancellation was accepted, but no refund was credited within the stated processing period."
+  },
+  "business": {
+    "company_name": "QuickKart Demo Marketplace",
+    "seller_name": "SoundHouse Demo Store",
+    "marketplace_or_channel": "QuickKart Demo website",
+    "website_or_app": "demo.quickkart.example",
+    "business_location": null
+  },
+  "transaction": {
+    "product_or_service": "Wireless headphones",
+    "product_identifier": "HEADPHONE-DEMO-01",
+    "order_reference": "ORDER-DEMO-20260820",
+    "invoice_reference": "INVOICE-DEMO-20260820",
+    "booking_or_policy_reference": null,
+    "transaction_date": "2026-08-20",
+    "delivery_date": null,
+    "cancellation_date": "2026-08-20",
+    "order_status": "cancelled",
+    "delivery_status": "not_applicable",
+    "amount_paid": "2499.00",
+    "amount_disputed": "2499.00",
+    "refund_expected": "2499.00",
+    "refund_received": "0.00",
+    "remaining_loss": "2499.00",
+    "currency": "INR",
+    "payment_method": "upi",
+    "payment_reference_last_four": "0000",
+    "reference_verification_status": "unverified_claim"
+  },
+  "resolution_attempts": [
+    {
+      "attempted_on": "2026-08-24",
+      "channel": "in_app_support",
+      "ticket_reference": "TICKET-DEMO-001",
+      "response_received": true,
+      "response_summary": "Support said the refund was initiated and should arrive within five business days.",
+      "outcome": "unresolved"
+    },
+    {
+      "attempted_on": "2026-08-27",
+      "channel": "email",
+      "ticket_reference": "TICKET-DEMO-002",
+      "response_received": false,
+      "response_summary": "No response received at the time of submission.",
+      "outcome": "unresolved"
+    }
+  ],
+  "requested_remedy": {
+    "primary": "refund",
+    "amount_requested": "2499.00",
+    "other_requests": [
+      "Confirm the refund reference",
+      "Explain the delay"
+    ],
+    "compensation_requested": false
+  },
+  "escalation": {
+    "previous_authorities_contacted": [],
+    "preferred_next_step": "seller_grievance_team",
+    "nch_reference": null,
+    "regulator_reference": null,
+    "e_jagriti_reference": null,
+    "official_escalation_requested": false
+  },
+  "evidence": [
+    {
+      "evidence_id": "EVID-DEMO-001",
+      "evidence_type": "order_confirmation",
+      "filename": "demo-order-confirmation.pdf",
+      "description": "Synthetic order confirmation showing the order amount and product.",
+      "storage_key": "demo-only/evidence/GD-DEMO12345678/order-confirmation.pdf",
+      "content_type": "application/pdf",
+      "file_size_bytes": 128000,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "synthetic_flag": true,
+      "review_status": "pending-review",
+      "redaction_status": "demo-data-only"
+    },
+    {
+      "evidence_id": "EVID-DEMO-002",
+      "evidence_type": "refund_or_cancellation_screenshot",
+      "filename": "demo-cancellation-status.png",
+      "description": "Synthetic screenshot showing cancellation acceptance and missing refund status.",
+      "storage_key": "demo-only/evidence/GD-DEMO12345678/cancellation-status.png",
+      "content_type": "image/png",
+      "file_size_bytes": 96000,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "synthetic_flag": true,
+      "review_status": "pending-review",
+      "redaction_status": "demo-data-only"
+    }
+  ],
+  "consents": {
+    "privacy_notice_version": "demo-2026-09",
+    "case_processing": true,
+    "aggregate_intelligence": true,
+    "share_with_official_authority": false,
+    "accepted_at": "2026-08-27T10:29:00Z"
+  },
+  "data_quality": {
+    "reported_by": "consumer",
+    "verification_status": "unverified",
+    "legal_finding": false,
+    "notes": "Synthetic fixture for local testing only. Values are not real consumer records or official statistics."
+  }
+}

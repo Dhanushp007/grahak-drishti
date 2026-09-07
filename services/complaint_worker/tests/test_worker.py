@@ -8,7 +8,13 @@ from sqlalchemy.pool import StaticPool
 
 from services.api.app.complaints import create_complaint
 from services.api.app.db import Base
-from services.api.app.models import ComplaintAnalysisRecord, OutboxEvent
+from services.api.app.intake_schemas import IntakeDraft
+from services.api.app.models import (
+    ComplaintAnalysisRecord,
+    ComplaintIntakeRecord,
+    IssueClusterRecord,
+    OutboxEvent,
+)
 from services.api.app.schemas import ComplaintCreate, ContactInput
 from services.complaint_worker.app.worker import process_pending_events
 
@@ -59,3 +65,49 @@ def test_worker_consumes_complaint_event_idempotently(worker_session: Session) -
     assert event is not None
     assert event.processed_at is not None
     assert process_pending_events(worker_session) == 0
+
+
+def test_worker_keeps_opted_out_rich_intake_out_of_public_clusters(
+    worker_session: Session,
+) -> None:
+    complaint = create_complaint(
+        worker_session,
+        ComplaintCreate(
+            description="Refund has not arrived after my cancellation.",
+            company_name="Private Seller",
+            amount_involved=Decimal("1499.00"),
+            contact=ContactInput(email="private@example.test"),
+            intake=IntakeDraft.model_validate({
+                "complaint": {
+                    "description": "Refund has not arrived after my cancellation."
+                },
+                "consumer": {"contact": {"email": "private@example.test"}},
+                "business": {"company_name": "Private Seller"},
+                "consents": {
+                    "case_processing": True,
+                    "aggregate_intelligence": False,
+                },
+            }),
+        ),
+        idempotency_key="worker-private-intake-1",
+    )
+
+    assert process_pending_events(worker_session) == 1
+    analysis = worker_session.scalar(
+        select(ComplaintAnalysisRecord).where(
+            ComplaintAnalysisRecord.complaint_id == complaint.id
+        )
+    )
+    intake = worker_session.scalar(
+        select(ComplaintIntakeRecord).where(
+            ComplaintIntakeRecord.complaint_id == complaint.id
+        )
+    )
+    cluster = worker_session.scalar(select(IssueClusterRecord))
+
+    assert analysis is not None
+    assert analysis.cluster_key is None
+    assert analysis.analysis["aggregate_intelligence"] is False
+    assert analysis.analysis["public_signal"] == "not_requested"
+    assert intake is not None
+    assert cluster is None

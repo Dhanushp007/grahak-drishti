@@ -1,7 +1,7 @@
 # GRAHAK-DRISHTI
 ## Consumer Protection Intelligence & Escalation Platform
 
-**Tagline:** From Individual Complaints to Consumer Intelligence  
+**Tagline:** From Individual Complaints to Consumer Intelligence
 **Product tagline:** See patterns. Route smarter. Resolve faster.
 
 **Updated hackathon stack:** Next.js + JavaScript + Tailwind + FastAPI + PostgreSQL/pgvector + Valkey + OpenSearch + MinIO + Kafka + Docker Compose.
