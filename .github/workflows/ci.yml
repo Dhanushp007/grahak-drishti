@@ -80,7 +80,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Install API dependencies
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
@@ -118,7 +117,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Install API dependencies
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
@@ -138,7 +136,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Install API dependencies
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
@@ -167,7 +164,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Install API dependencies
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
@@ -275,7 +271,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Set up Node
         uses: actions/setup-node@v5
@@ -341,7 +336,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Set up Node
         uses: actions/setup-node@v5
