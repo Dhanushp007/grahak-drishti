@@ -37,7 +37,7 @@ const stateMapLabels = {
   gj: [66, 355, "Gujarat"], hr: [164, 195, "Haryana"], hp: [191, 133, "HP"], jk: [173, 61, "J&K"],
   jh: [366, 327, "Jharkhand"], ka: [171, 519, "Karnataka"], kl: [166, 615, "Kerala"], ld: [99, 627, "LD"],
   mp: [214, 319, "Madhya Pradesh"], mh: [180, 435, "Maharashtra"], mn: [537, 301, "Manipur"], ml: [484, 283, "Meghalaya"],
-  mz: [516, 337, "Mizoram"], nl: [546, 270, "Nagaland"], or: [340, 405, "Odisha"], py: [268, 546, "Puducherry"],
+  mz: [516, 337, "Mizoram"], nl: [546, 270, "Nagaland"], od: [340, 405, "Odisha"], or: [340, 405, "Odisha"], py: [268, 546, "Puducherry"],
   pb: [151, 152, "Punjab"], rj: [119, 257, "Rajasthan"], sk: [425, 235, "Sikkim"], tn: [211, 609, "Tamil Nadu"],
   tg: [237, 457, "Telangana"], tr: [493, 325, "Tripura"], up: [265, 245, "Uttar Pradesh"], ut: [232, 175, "Uttarakhand"],
   wb: [412, 310, "West Bengal"],
