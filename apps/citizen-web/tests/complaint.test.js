@@ -3,6 +3,8 @@ import test from "node:test";
 
 import { buildComplaintPayload, buildTrackingPayload, readApiResponse, validateComplaintForm } from "../lib/complaint.js";
 import { DEMO_SCENARIOS } from "../lib/demo-scenarios.js";
+import { fetchMyReports } from "../lib/reports.js";
+import { fetchPublicIssues } from "../lib/issues.js";
 
 test("builds the API payload with a single normalized contact", () => {
   const payload = buildComplaintPayload({
@@ -61,4 +63,24 @@ test("turns a plain-text server failure into a useful request error", async () =
     readApiResponse(response),
     /reporting service is temporarily unavailable/,
   );
+});
+
+test("turns a missing report lookup into an empty result", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new globalThis.Response("Complaint could not be found", { status: 404 });
+  try {
+    assert.deepEqual(await fetchMyReports({ email: "consumer@example.com" }), []);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("shows a useful message when public issues return plain text", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new globalThis.Response("Internal Server Error", { status: 502 });
+  try {
+    await assert.rejects(fetchPublicIssues(), /reporting service is temporarily unavailable/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

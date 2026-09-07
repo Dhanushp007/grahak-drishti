@@ -724,7 +724,7 @@ Complaint API
 
 ```powershell
 python -m pip install -e ".[dev]"
-$env:DATABASE_URL = "sqlite:///./demo-flow.db"
+$env:DATABASE_URL = "sqlite:///./.demo-storage/databases/demo-flow.db"
 python -m alembic upgrade head
 python -m scripts.seed_demo --reset
 ```
@@ -784,19 +784,19 @@ For the browser journey, install Chromium and set `CITIZEN_BASE_URL` and `ADMIN_
 - The dashboard values are synthetic and should not be interpreted as government measurements.
 - The current `dashboardSnapshot` fixture remains for frontend contract tests even though the page is API-backed.
 - `0007_worker_claims` is currently irreversible through Alembic downgrade.
-- `ARCHITECTURE.md` and `DEVELOPMENT_PLAN.md` remain concise outlines; the detailed current-state description is in this file and the POC stabilization plan.
+- `docs/ARCHITECTURE.md` and `docs/DEVELOPMENT_PLAN.md` remain concise outlines; the detailed current-state description is in this file and the POC stabilization plan.
 
 ## 19. Source-of-Truth Files
 
 Use these files for deeper context:
 
-- `PRD.md`: product requirements, positioning, privacy, signal model, and demo goals.
+- `docs/PRD.md`: product requirements, positioning, privacy, signal model, and demo goals.
 - `AGENTS.md`: autonomous development rules, boundaries, security, and quality gates.
-- `ARCHITECTURE.md`: high-level architecture outline.
-- `DEVELOPMENT_PLAN.md`: high-level implementation phases.
+- `docs/ARCHITECTURE.md`: high-level architecture outline.
+- `docs/DEVELOPMENT_PLAN.md`: high-level implementation phases.
 - `README.md`: setup, commands, and current feature summary.
-- `GRAHAK-DRISHTI_POC_STABILIZATION_PLAN.md`: detailed POC execution and presentation plan.
-- `docs/poc/IMPLEMENTATION_AUDIT.md`: historical pre-PR #19 audit retained for traceability.
+- `docs/GRAHAK-DRISHTI_POC_STABILIZATION_PLAN.md`: detailed POC execution and presentation plan.
+- `docs/IMPLEMENTATION_AUDIT.md`: historical pre-PR #19 audit retained for traceability.
 - `.github/workflows/ci.yml`: CI triggers and validation jobs.
 
 ## 20. Final Assessment

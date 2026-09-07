@@ -133,7 +133,9 @@ class RequestedRemedy(IntakeModel):
 
 
 class Escalation(IntakeModel):
-    previous_authorities_contacted: list[str] = Field(default_factory=list, max_length=20)
+    previous_authorities_contacted: list[str] = Field(
+        default_factory=list, max_length=20
+    )
     preferred_next_step: str | None = Field(default=None, max_length=100)
     nch_reference: str | None = Field(default=None, max_length=120)
     regulator_reference: str | None = Field(default=None, max_length=120)

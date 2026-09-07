@@ -10,8 +10,15 @@ from services.api.app.intake_schemas import IntakeDraft, IntakePatch
 
 
 def test_complete_synthetic_template_validates() -> None:
-    fixture_path = Path(__file__).resolve().parents[3] / "data" / "seed" / "sample-complaint-intake.json"
-    draft = IntakeDraft.model_validate(json.loads(fixture_path.read_text(encoding="utf-8")))
+    fixture_path = (
+        Path(__file__).resolve().parents[3]
+        / "data"
+        / "seed"
+        / "sample-complaint-intake.json"
+    )
+    draft = IntakeDraft.model_validate(
+        json.loads(fixture_path.read_text(encoding="utf-8"))
+    )
 
     assert draft.schema_version == "complaint-intake.v1"
     assert draft.business.company_name == "QuickKart Demo Marketplace"

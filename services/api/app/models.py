@@ -2,8 +2,8 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import (
-    Boolean,
     JSON,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,

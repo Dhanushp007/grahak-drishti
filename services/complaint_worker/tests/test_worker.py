@@ -8,7 +8,13 @@ from sqlalchemy.pool import StaticPool
 
 from services.api.app.complaints import create_complaint
 from services.api.app.db import Base
-from services.api.app.models import ComplaintAnalysisRecord, ComplaintIntakeRecord, IssueClusterRecord, OutboxEvent
+from services.api.app.intake_schemas import IntakeDraft
+from services.api.app.models import (
+    ComplaintAnalysisRecord,
+    ComplaintIntakeRecord,
+    IssueClusterRecord,
+    OutboxEvent,
+)
 from services.api.app.schemas import ComplaintCreate, ContactInput
 from services.complaint_worker.app.worker import process_pending_events
 
@@ -71,7 +77,7 @@ def test_worker_keeps_opted_out_rich_intake_out_of_public_clusters(
             company_name="Private Seller",
             amount_involved=Decimal("1499.00"),
             contact=ContactInput(email="private@example.test"),
-            intake={
+            intake=IntakeDraft.model_validate({
                 "complaint": {
                     "description": "Refund has not arrived after my cancellation."
                 },
@@ -81,7 +87,7 @@ def test_worker_keeps_opted_out_rich_intake_out_of_public_clusters(
                     "case_processing": True,
                     "aggregate_intelligence": False,
                 },
-            },
+            }),
         ),
         idempotency_key="worker-private-intake-1",
     )

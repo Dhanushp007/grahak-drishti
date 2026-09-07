@@ -4,11 +4,11 @@
 
 GRAHAK-DRISHTI is a Consumer Intelligence and Escalation Layer for India's consumer-protection ecosystem.
 
-Read `PRD.md` before implementing product functionality.
+Read `docs/PRD.md` before implementing product functionality.
 
-Read `ARCHITECTURE.md` before making architectural changes.
+Read `docs/ARCHITECTURE.md` before making architectural changes.
 
-Read `DEVELOPMENT_PLAN.md` to understand implementation phases.
+Read `docs/DEVELOPMENT_PLAN.md` to understand implementation phases.
 
 Read `AGENTS.md` for the complete autonomous development rules.
 

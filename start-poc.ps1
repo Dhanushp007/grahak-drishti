@@ -3,6 +3,7 @@ $Root = $PSScriptRoot
 $ComposeFile = Join-Path $Root "infrastructure\docker-compose.yml"
 $EnvFile = Join-Path $Root ".env"
 $PythonExe = Join-Path $Root ".venv\Scripts\python.exe"
+$DatabaseDirectory = Join-Path $Root ".demo-storage\databases"
 $DatabaseUrl = "postgresql+psycopg://grahak:grahak_dev@127.0.0.1:5432/grahak_drishti"
 $ContactHashSecret = "local-development-contact-hash-secret"
 
@@ -91,8 +92,9 @@ try {
         }
     }
     if (-not $postgresReady) {
-        $DatabaseUrl = "sqlite:///./demo-poc.db"
-        Write-Host "Docker/PostgreSQL is unavailable. Using local SQLite at demo-poc.db for the POC."
+        New-Item -ItemType Directory -Path $DatabaseDirectory -Force | Out-Null
+        $DatabaseUrl = "sqlite:///./.demo-storage/databases/demo-poc.db"
+        Write-Host "Docker/PostgreSQL is unavailable. Using local SQLite at .demo-storage/databases/demo-poc.db for the POC."
     }
     $env:DATABASE_URL = $DatabaseUrl
     $env:CONTACT_HASH_SECRET = $ContactHashSecret

@@ -111,7 +111,7 @@ The API automatically selects the `psycopg` SQLAlchemy driver for this URL. URL-
 Run the backend golden journey against a migrated and seeded local API with:
 
 ```powershell
-$env:DATABASE_URL = "sqlite:///./demo-flow.db"
+$env:DATABASE_URL = "sqlite:///./.demo-storage/databases/demo-flow.db"
 python -m alembic upgrade head
 python -m scripts.seed_demo --reset
 python -m uvicorn services.api.app.main:app --port 8002

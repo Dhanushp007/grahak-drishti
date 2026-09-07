@@ -4,6 +4,7 @@ import re
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -227,11 +228,15 @@ def update_complaint(
         )
     )
     if intake_record is not None:
-        intake_payload = deepcopy(intake_record.payload)
+        intake_payload = deepcopy(cast(dict[str, Any], intake_record.payload))
         intake_payload.setdefault("complaint", {})["description"] = payload.description
-        intake_payload.setdefault("business", {})["company_name"] = payload.company_name
+        intake_payload.setdefault("business", {})["company_name"] = (
+            payload.company_name
+        )
         intake_payload.setdefault("transaction", {})["amount_disputed"] = (
-            str(payload.amount_involved) if payload.amount_involved is not None else None
+            str(payload.amount_involved)
+            if payload.amount_involved is not None
+            else None
         )
         intake_payload.setdefault("consumer", {}).setdefault("address", {})[
             "state"

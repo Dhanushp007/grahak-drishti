@@ -6,7 +6,6 @@ from typing import Any
 from services.api.app.config import Settings, get_settings
 from services.api.app.intake_schemas import IntakeDraft, IntakeNormalizeRequest
 
-
 LIVE_SYSTEM_INSTRUCTION = """
 You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.
 Speak in the language the consumer uses, including English, Hindi, and natural
@@ -119,7 +118,9 @@ class GeminiProvider:
         )
 
     def normalize(self, request: IntakeNormalizeRequest) -> NormalizedDraft:
-        if request.transcript and len(request.transcript) > self.settings.gemini_max_transcript_chars:
+        if request.transcript and len(request.transcript) > (
+            self.settings.gemini_max_transcript_chars
+        ):
             raise GeminiInvalidOutputError("transcript exceeds the configured limit")
         prompt = self._normalization_prompt(request)
         try:
@@ -150,13 +151,17 @@ class GeminiProvider:
             parsed = json.loads(response_text)
             draft = IntakeDraft.model_validate(parsed)
         except (TypeError, ValueError, json.JSONDecodeError) as exc:
-            raise GeminiInvalidOutputError("Gemini returned invalid structured intake") from exc
+            raise GeminiInvalidOutputError(
+                "Gemini returned invalid structured intake"
+            ) from exc
         return NormalizedDraft(draft=draft, model=self.settings.gemini_extraction_model)
 
     @staticmethod
     def _normalization_prompt(request: IntakeNormalizeRequest) -> str:
         draft_json = json.dumps(
-            request.draft.model_dump(mode="json"), ensure_ascii=True, separators=(",", ":")
+            request.draft.model_dump(mode="json"),
+            ensure_ascii=True,
+            separators=(",", ":"),
         )
         transcript = request.transcript or ""
         return (

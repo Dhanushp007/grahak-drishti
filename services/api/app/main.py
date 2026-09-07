@@ -11,8 +11,8 @@ from services.api.app.complaints import (
 )
 from services.api.app.dashboard_routes import router as dashboard_router
 from services.api.app.demo_routes import router as demo_router
-from services.api.app.intelligence import CorroborationNotFoundError
 from services.api.app.intake_routes import router as intake_router
+from services.api.app.intelligence import CorroborationNotFoundError
 from services.api.app.issue_routes import router as issue_router
 from services.api.app.issues import IssueNotFoundError
 from services.api.app.routes import router as complaint_router
