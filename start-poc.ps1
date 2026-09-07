@@ -64,12 +64,10 @@ if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) {
 }
 
 $CitizenPort = Select-FreePort @(3000, 3010, 3020)
-$AdminPort = Select-FreePort @(3001, 3011, 3021)
 $ApiPort = Select-FreePort @(8000, 8010, 8020)
 $ApiOrigin = "http://127.0.0.1:$ApiPort"
 
 if ($CitizenPort -ne 3000) { Write-Host "Port 3000 is busy. Citizen web will use $CitizenPort." }
-if ($AdminPort -ne 3001) { Write-Host "Port 3001 is busy. Government dashboard will use $AdminPort." }
 if ($ApiPort -ne 8000) { Write-Host "Port 8000 is busy. API will use $ApiPort." }
 
 Push-Location $Root
@@ -98,6 +96,7 @@ try {
     }
     $env:DATABASE_URL = $DatabaseUrl
     $env:CONTACT_HASH_SECRET = $ContactHashSecret
+    $env:RUN_COMPLAINT_WORKER = "true"
 
     Write-Host "Applying database migrations..."
     Invoke-CheckedCommand $PythonExe @("-m", "alembic", "upgrade", "head") $Root
@@ -109,17 +108,9 @@ try {
         Write-Host "Installing citizen web dependencies..."
         Invoke-CheckedCommand "npm.cmd" @("ci", "--prefix", (Join-Path $Root "apps\citizen-web")) $Root
     }
-    $adminNodeModules = Join-Path $Root "apps\admin-dashboard\node_modules"
-    if (-not (Test-Path $adminNodeModules)) {
-        Write-Host "Installing government dashboard dependencies..."
-        Invoke-CheckedCommand "npm.cmd" @("ci", "--prefix", (Join-Path $Root "apps\admin-dashboard")) $Root
-    }
-
     $script:ServiceProcesses = @(
-        (Start-Process cmd.exe -WorkingDirectory $Root -ArgumentList "/k", "title GRAHAK API && set `"DATABASE_URL=$DatabaseUrl`" && set `"CONTACT_HASH_SECRET=$ContactHashSecret`" && $PythonCommand -m uvicorn services.api.app.main:app --host 127.0.0.1 --port $ApiPort" -PassThru),
-        (Start-Process cmd.exe -WorkingDirectory $Root -ArgumentList "/k", "title GRAHAK Complaint Worker && set `"DATABASE_URL=$DatabaseUrl`" && set `"CONTACT_HASH_SECRET=$ContactHashSecret`" && $PythonCommand -m services.complaint_worker.app.worker --interval 0.1" -PassThru),
-        (Start-Process cmd.exe -WorkingDirectory (Join-Path $Root "apps\citizen-web") -ArgumentList "/k", "title GRAHAK Citizen Web && set `"API_ORIGIN=$ApiOrigin`" && npm run dev -- --port $CitizenPort" -PassThru),
-        (Start-Process cmd.exe -WorkingDirectory (Join-Path $Root "apps\admin-dashboard") -ArgumentList "/k", "title GRAHAK Government Dashboard && set `"API_ORIGIN=$ApiOrigin`" && npm run dev -- --port $AdminPort" -PassThru)
+        (Start-Process cmd.exe -WorkingDirectory $Root -ArgumentList "/k", "title GRAHAK API && set `"DATABASE_URL=$DatabaseUrl`" && set `"CONTACT_HASH_SECRET=$ContactHashSecret`" && set `"RUN_COMPLAINT_WORKER=true`" && $PythonCommand -m uvicorn services.api.app.main:app --host 127.0.0.1 --port $ApiPort" -PassThru),
+        (Start-Process cmd.exe -WorkingDirectory (Join-Path $Root "apps\citizen-web") -ArgumentList "/k", "title GRAHAK Web && set `"API_ORIGIN=$ApiOrigin`" && npm run dev -- --port $CitizenPort" -PassThru)
     )
     $watchPath = Join-Path $Root "stop-poc-watch.ps1"
     $servicePids = ($script:ServiceProcesses | ForEach-Object { $_.Id }) -join ","
@@ -127,9 +118,9 @@ try {
     $watchdog = Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $watchArguments -PassThru
 
     Write-Host ""
-    Write-Host "GRAHAK-DRISHTI is running in four service windows."
+    Write-Host "GRAHAK-DRISHTI is running with one web process and one API process."
     Write-Host "Citizen web:       http://127.0.0.1:$CitizenPort"
-    Write-Host "Government view:   http://127.0.0.1:$AdminPort"
+    Write-Host "Government view:   http://127.0.0.1:$CitizenPort/government"
     Write-Host "API health:        http://127.0.0.1:$ApiPort/health"
     Write-Host ""
     Write-Host "Press Ctrl+C in this launcher window to close all four service windows."

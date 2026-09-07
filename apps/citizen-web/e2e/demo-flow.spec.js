@@ -46,7 +46,8 @@ test("completes citizen report, evidence, and government intelligence journey", 
   await expect(reportCard.locator(".report-description")).toHaveText("The refund is still delayed after my cancellation.");
 
   const adminPage = await page.context().newPage();
-  await adminPage.goto(process.env.ADMIN_BASE_URL || "http://127.0.0.1:3001");
+  const governmentBaseUrl = process.env.ADMIN_BASE_URL || `${process.env.CITIZEN_BASE_URL || "http://127.0.0.1:3000"}/government`;
+  await adminPage.goto(governmentBaseUrl);
   await adminPage.getByRole("button", { name: "Official demo" }).click();
   await expect(adminPage.getByText("Demo Government Official")).toBeVisible();
   const refundRow = adminPage.getByRole("row", { name: /01 Refund delays on QuickKart/ });

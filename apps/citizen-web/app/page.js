@@ -121,6 +121,7 @@ export default function HomePage() {
         <nav className="topbar-nav" aria-label="Citizen navigation">
           <a href="/issues">Explore issues</a>
           <a href="/track">Track a report</a>
+          <a href="/government">Government view</a>
           <a className="landing-login-link" href="/login?returnTo=%2Freport">Sign in</a>
         </nav>
       </header>

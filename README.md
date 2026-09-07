@@ -8,16 +8,16 @@ Consumer intelligence and escalation platform for India's consumer-protection ec
 
 On Windows, double-click `start-poc.bat` from the repository root. The
 launcher starts PostgreSQL, applies migrations, resets the deterministic demo
-dataset, and opens separate windows for the API, complaint worker, citizen web,
-and government dashboard. Keep the titled `GRAHAK POC Controller` window open
-while using the POC; press `Ctrl+C` in that window to close all four service
+dataset, and opens windows for the Python API and one shared web
+process. Keep the titled `GRAHAK POC Controller` window open while using the
+POC; press `Ctrl+C` in that window to close all service
 windows together. A hidden watchdog also cleans up the service trees if the
 controller window is closed unexpectedly.
 
-The browser applications will be available at:
+Both browser experiences are served by the same Next.js process and origin:
 
 - Citizen web: `http://127.0.0.1:3000`
-- Government dashboard: `http://127.0.0.1:3001`
+- Government intelligence: `http://127.0.0.1:3000/government`
 - API health: `http://127.0.0.1:8000/health` (or the fallback port printed by the launcher)
 
 If a default port is already in use, the launcher automatically selects the
@@ -50,7 +50,7 @@ The service exposes `GET /health` and returns a versioned service status. Compla
 
 The AI package currently provides a deterministic, explainable complaint classifier for worker use. It returns structured sector, issue, severity, financial-impact, evidence, duplicate-hint, confidence, and provenance fields; it is advisory and does not run on the complaint acknowledgement path.
 
-The complaint worker consumes unprocessed `complaint.created.v1` outbox events with `python -m services.complaint_worker.app.worker`. It runs classification, semantic-plus-metadata duplicate detection, dark-pattern analysis, routing guidance, and aggregate cluster updates. Processing is idempotent: an event is marked processed only after its analysis is persisted.
+The API can run the complaint worker in-process with `RUN_COMPLAINT_WORKER=true`. It consumes unprocessed `complaint.created.v1` outbox events, runs classification, semantic-plus-metadata duplicate detection, dark-pattern analysis, routing guidance, and aggregate cluster updates. Processing is idempotent: an event is marked processed only after its analysis is persisted.
 
 The same package provides a provider-replaceable 128-dimensional deterministic embedding baseline and cosine similarity contract. It fingerprints normalized text for traceability without returning the source complaint text; a production semantic model and pgvector persistence remain later milestones.
 
@@ -121,31 +121,32 @@ In a second terminal, run `python scripts/demo_smoke_test.py` with
 `$env:DEMO_BASE_URL = "http://127.0.0.1:8002"`. The check covers complaint,
 intelligence, evidence, dashboard and geography behavior.
 
-For asynchronous complaint processing in the local demo, run the worker in a
-third terminal after starting the API:
+For asynchronous complaint processing in the local demo, enable the embedded
+worker before starting the API:
 
 ```powershell
-python -m services.complaint_worker.app.worker --interval 0.1
+$env:RUN_COMPLAINT_WORKER = "true"
+python -m uvicorn services.api.app.main:app --port 8000
 ```
 
-Run the government intelligence app separately:
+The government intelligence view is served by the same citizen-web process:
 
 ```powershell
-Push-Location apps/admin-dashboard
+Push-Location apps/citizen-web
 $env:API_ORIGIN = "http://127.0.0.1:8000"
 npm ci
 npm run dev
 Pop-Location
 ```
 
-The admin app loads `/api/v1/dashboard/overview`, `/api/v1/dashboard/geography`, and aggregate issue drill-down data from the API. Both apps visibly label the environment as synthetic demo data.
+The government view loads `/api/v1/dashboard/overview`, `/api/v1/dashboard/geography`, and aggregate issue drill-down data from `/government`. The shared web app visibly labels the environment as synthetic demo data.
 
-Run the browser journey after starting the API, complaint worker, and both web apps:
+Run the browser journey after starting the API and the shared web app:
 
 ```powershell
 Push-Location apps/citizen-web
 $env:CITIZEN_BASE_URL = "http://127.0.0.1:3000"
-$env:ADMIN_BASE_URL = "http://127.0.0.1:3001"
+$env:ADMIN_BASE_URL = "http://127.0.0.1:3000/government"
 npx playwright install chromium
 npm run e2e
 Pop-Location
