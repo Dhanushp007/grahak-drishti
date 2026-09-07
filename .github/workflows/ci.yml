@@ -178,13 +178,12 @@ jobs:
       - name: Run seeded HTTP demo flow
         env:
           DATABASE_URL: sqlite:///${{ runner.temp }}/grahak-drishti-demo.db
+          RUN_COMPLAINT_WORKER: "true"
         run: |
           set -euo pipefail
           python -m uvicorn services.api.app.main:app --host 127.0.0.1 --port 8002 &
           server_pid=$!
-          python -m services.complaint_worker.app.worker --interval 0.1 &
-          worker_pid=$!
-          trap 'kill "$server_pid" "$worker_pid" 2>/dev/null || true' EXIT
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:8002/health >/dev/null; then
               break
@@ -327,7 +326,7 @@ jobs:
     env:
       API_ORIGIN: http://127.0.0.1:8003
       CITIZEN_BASE_URL: http://127.0.0.1:3005
-      ADMIN_BASE_URL: http://127.0.0.1:3006
+      ADMIN_BASE_URL: http://127.0.0.1:3005/government
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -351,12 +350,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           npm ci --prefix apps/citizen-web
-          npm ci --prefix apps/admin-dashboard
           (cd apps/citizen-web && npx playwright install --with-deps chromium)
 
       - name: Seed database, start services, and run browser journey
         env:
           DATABASE_URL: sqlite:///${{ runner.temp }}/grahak-drishti-browser.db
+          RUN_COMPLAINT_WORKER: "true"
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
         run: |
           set -euo pipefail
@@ -364,22 +363,18 @@ jobs:
           python -m scripts.seed_demo --reset
           python -m uvicorn services.api.app.main:app --host 127.0.0.1 --port 8003 &
           api_pid=$!
-          python -m services.complaint_worker.app.worker --interval 0.1 &
-          worker_pid=$!
           (cd apps/citizen-web && npm run dev -- --port 3005) &
           citizen_pid=$!
-          (cd apps/admin-dashboard && npm run dev -- --port 3006) &
-          admin_pid=$!
-          trap 'kill "$api_pid" "$worker_pid" "$citizen_pid" "$admin_pid" 2>/dev/null || true' EXIT
+          trap 'kill "$api_pid" "$citizen_pid" 2>/dev/null || true' EXIT
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:8003/health >/dev/null && \
               curl --fail --silent http://127.0.0.1:3005/ >/dev/null && \
-              curl --fail --silent http://127.0.0.1:3006/ >/dev/null; then
+              curl --fail --silent http://127.0.0.1:3005/government >/dev/null; then
               break
             fi
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:8003/health >/dev/null
           curl --fail --silent http://127.0.0.1:3005/ >/dev/null
-          curl --fail --silent http://127.0.0.1:3006/ >/dev/null
+          curl --fail --silent http://127.0.0.1:3005/government >/dev/null
           (cd apps/citizen-web && npm run e2e)
