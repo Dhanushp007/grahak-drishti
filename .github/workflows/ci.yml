@@ -375,10 +375,32 @@ jobs:
         run: pip-audit --skip-editable
 
       - name: Audit citizen web dependencies
-        run: npm ci --prefix apps/citizen-web && npm run security --prefix apps/citizen-web
+        run: |
+          npm ci --prefix apps/citizen-web
+          for attempt in 1 2 3; do
+            if npm run security --prefix apps/citizen-web; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Retrying citizen web security audit (attempt $((attempt + 1))/3) after transient failure..."
+            sleep 20
+          done
 
       - name: Audit admin dashboard dependencies
-        run: npm ci --prefix apps/admin-dashboard && npm run security --prefix apps/admin-dashboard
+        run: |
+          npm ci --prefix apps/admin-dashboard
+          for attempt in 1 2 3; do
+            if npm run security --prefix apps/admin-dashboard; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Retrying admin dashboard security audit (attempt $((attempt + 1))/3) after transient failure..."
+            sleep 20
+          done
 
       - name: Scan repository for secrets
         uses: gitleaks/gitleaks-action@v2
