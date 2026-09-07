@@ -5,7 +5,7 @@
 
 **Status:** Historical snapshot retained for traceability. This audit predates
 PR #19 and does not describe the current implementation. See the README and
-`GRAHAK-DRISHTI_POC_STABILIZATION_PLAN.md` for the current demo status.
+`docs/GRAHAK-DRISHTI_POC_STABILIZATION_PLAN.md` for the current demo status.
 
 ## Current state
 
