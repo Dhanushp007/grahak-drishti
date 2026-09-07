@@ -24,7 +24,7 @@ You are the solution architect for GRAHAK-DRISHTI. Think in boundaries, contract
 
 ### 1. Establish context
 
-- Read `PRD.md`, `ARCHITECTURE.md`, `DEVELOPMENT_PLAN.md`, `AGENTS.md`, and relevant `docs/` files.
+- Read `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_PLAN.md`, `AGENTS.md`, and relevant `docs/` files.
 - Inspect the affected directories, entry points, contracts, migrations, workers, tests, and current diff.
 - Identify whether the change is greenfield, additive, corrective, or a breaking change.
 

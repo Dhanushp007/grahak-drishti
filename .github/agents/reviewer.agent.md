@@ -12,7 +12,7 @@ You are the senior reviewer for GRAHAK-DRISHTI. Review behavior and risk, not au
 ### 1. Establish intent and scope
 
 - Read the full diff and changed files, then inspect affected callers, schemas, migrations, workers, UI states, tests, and documentation.
-- Compare the implementation with the explicit task, `PRD.md`, `ARCHITECTURE.md`, `AGENTS.md`, and applicable instructions.
+- Compare the implementation with the explicit task, `docs/PRD.md`, `docs/ARCHITECTURE.md`, `AGENTS.md`, and applicable instructions.
 - Confirm the commit or change description matches the actual behavior and identify unrelated scope expansion.
 
 ### 2. Trace behavior
