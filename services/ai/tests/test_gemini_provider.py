@@ -18,3 +18,7 @@ def test_classifies_common_gemini_provider_failures_without_raw_details() -> Non
         "model_unavailable"
     )
     assert classify_provider_exception(TimeoutError("request timed out")) == "timeout"
+    assert (
+        classify_provider_exception(ProviderException(500, "upstream timed out"))
+        == "timeout"
+    )
