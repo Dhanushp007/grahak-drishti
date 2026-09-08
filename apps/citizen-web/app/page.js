@@ -19,9 +19,9 @@ const initialForm = {
 };
 
 const landingSteps = [
-  { number: "01", label: "Our vision", title: "Turn scattered experiences into a clearer public view.", detail: "One consumer story can help reveal a pattern without exposing the person behind it." },
-  { number: "02", label: "Seamless filing, wherever you are", title: "File your complaint from anywhere in India.", detail: "A guided starting point for consumers in every state, with one private docket to follow." },
-  { number: "03", label: "Speak and file", title: "Speak and file your complaint.", detail: "Start naturally, add what you know, and let the case become clearer as it moves forward." },
+  { number: "01", label: "Report the experience", title: "Refund confirmed. Money still missing.", detail: "A QuickKart consumer gets a private docket without exposing personal details." },
+  { number: "02", label: "Find the pattern", title: "Similar complaints become one issue signal.", detail: "Company, issue, and timing connect separate reports into an aggregate view." },
+  { number: "03", label: "Strengthen the signal", title: "Evidence makes the pattern more useful.", detail: "Corroboration helps analysts see trend, impact, geography, and a sensible next step." },
 ];
 
 export default function HomePage() {
@@ -51,11 +51,11 @@ export default function HomePage() {
 
       <section className="landing-hero" aria-labelledby="landing-title">
         <div className="landing-hero-copy">
-          <p className="eyebrow">A consumer-first starting point</p>
-          <h1 id="landing-title">Make your complaint count.</h1>
+          <p className="eyebrow">The problem in one sentence</p>
+          <h1 id="landing-title">One refund delay can reveal a pattern.</h1>
           <p className="landing-intro">
-            Start with what happened. GRAHAK-DRISHTI helps you create a private case,
-            follow its progress, and see when other consumers have faced a similar issue.
+            A refund was promised but never arrived. GRAHAK-DRISHTI turns that private
+            experience into an evidence-backed consumer signal without exposing the person behind it.
           </p>
           <div className="landing-actions">
             <a className="primary-button" href="/login?returnTo=%2Freport">
@@ -88,19 +88,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="guidance-strip" aria-labelledby="guidance-title">
-        <div className="onboarding-heading">
-          <p className="eyebrow">Start with what you know</p>
-          <h2 id="guidance-title">A clearer way to take action.</h2>
-          <p>File privately, keep your docket close, and understand the wider consumer signal.</p>
-        </div>
-        <div className="guidance-actions"><a className="primary-button" href="/login?returnTo=%2Freport">Start a private case <ArrowRight size={17} /></a><a className="guidance-text-link" href="/track">Already have a docket? Track it <ArrowRight size={15} /></a></div>
-      </section>
-
       <section className="landing-options" aria-labelledby="options-title">
         <div className="landing-section-heading">
-          <p className="eyebrow">One place to start</p>
-          <h2 id="options-title">Choose what you need today.</h2>
+          <p className="eyebrow">Continue the story</p>
+          <h2 id="options-title">Choose your next step.</h2>
         </div>
         <div className="landing-option-grid">
           <a className="landing-option" href="/login?returnTo=%2Freport">
@@ -123,8 +114,8 @@ export default function HomePage() {
 
       <footer className="page-footer landing-footer">
         <a className="landing-footer-brand wordmark" href="/" aria-label="GRAHAK-DRISHTI home">GRAHAK<span>-</span>DRISHTI</a>
-        <span className="landing-footer-copyright">© 2026 GRAHAK-DRISHTI. All rights reserved.</span>
-        <a className="landing-footer-contact" href="mailto:contact@grahak-drishti.example">Contact us</a>
+        <span className="landing-footer-copyright">Hackathon demo · Synthetic data only</span>
+        <a className="landing-footer-contact" href="/issues">Explore the signal <ArrowRight size={14} /></a>
       </footer>
     </main>
   );
