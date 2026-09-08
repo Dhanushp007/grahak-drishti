@@ -223,6 +223,12 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .voice-heading h2 { font-size: 2rem; margin-top: 7px; }
 .voice-language { align-items: center; color: var(--teal); display: inline-flex; font-family: var(--font-body); font-size: 11px; gap: 6px; padding-top: 9px; white-space: nowrap; }
 .voice-copy { color: var(--muted); font-family: var(--font-body); font-size: 13px; line-height: 1.55; margin: 13px 0 23px; max-width: 520px; }
+.voice-handoff-notice { align-items: flex-start; background: #fff8e8; border-left: 3px solid var(--yellow); display: flex; gap: 18px; justify-content: space-between; margin: 0 0 17px; padding: 13px 15px; }
+.voice-handoff-notice strong, .voice-handoff-notice p, .voice-handoff-notice small { display: block; font-family: var(--font-body); }
+.voice-handoff-notice strong { color: var(--ink); font-size: 12px; }
+.voice-handoff-notice p { color: #665725; font-size: 11px; line-height: 1.45; margin: 4px 0 3px; max-width: 460px; }
+.voice-handoff-notice small { color: #79611b; font-size: 10px; line-height: 1.4; }
+.voice-handoff-notice .text-button { flex: 0 0 auto; margin: 0; }
 .voice-status { align-items: center; background: #f2f7f3; border: 1px solid #c9ded3; border-radius: 6px; color: var(--teal); display: flex; gap: 12px; padding: 14px; }
 .voice-status-error { background: #fff4f1; border-color: #efc8bf; color: var(--coral-dark); }
 .voice-status-normalizing { background: #fff8e8; border-color: #ecdcae; color: #79611b; }
@@ -697,6 +703,14 @@ textarea { min-height: 132px; }
 .consultant-start-button:hover, .consultant-start-button.is-active { background: var(--coral-dark); border-color: var(--coral-dark); }
 .consultant-start-button:focus-visible { background: var(--coral-dark); border-color: var(--coral-dark); outline: 3px solid var(--yellow); outline-offset: 3px; }
 .consultant-start-button:disabled { cursor: wait; opacity: .55; }
+.consultant-handoff { align-items: center; background: white; border: 1px solid #c9ded3; display: flex; gap: 18px; justify-content: space-between; margin-top: 24px; max-width: 440px; padding: 13px 15px; text-align: left; width: 100%; }
+.consultant-handoff strong, .consultant-handoff p { display: block; font-family: var(--font-body); }
+.consultant-handoff strong { color: var(--ink); font-size: 11px; }
+.consultant-handoff p { color: var(--muted); font-size: 10px; line-height: 1.45; margin: 4px 0 0; }
+.consultant-handoff-button { align-items: center; background: var(--teal); border: 1px solid var(--teal); color: white; cursor: pointer; display: inline-flex; flex: 0 0 auto; font-family: var(--font-body); font-size: 11px; font-weight: 700; gap: 7px; justify-content: center; min-height: 42px; padding: 0 13px; }
+.consultant-handoff-button:hover { background: #0e5653; border-color: #0e5653; }
+.consultant-handoff-button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+.consultant-handoff-button:disabled { cursor: wait; opacity: .6; }
 .consultant-error { align-items: flex-start; background: #fff4f1; border-left: 3px solid var(--coral); color: var(--coral-dark); display: flex; font-family: var(--font-body); font-size: 11px; gap: 8px; line-height: 1.45; margin: 0 22px; padding: 11px 13px; }
 .consultant-disclosure { align-items: flex-start; border-top: 1px solid var(--line); color: var(--muted); display: flex; font-family: var(--font-body); font-size: 10px; gap: 7px; line-height: 1.5; margin: 18px 22px 0; padding: 14px 0 19px; }
 .consultant-next-step { align-items: center; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); display: grid; gap: 30px; grid-template-columns: minmax(0, 1fr) auto; margin: 0 4%; padding: 34px 0; }
@@ -727,6 +741,8 @@ textarea { min-height: 132px; }
   .consultant-voice-orb { height: 112px; width: 112px; }
   .consultant-voice-stage h3 { font-size: 26px; }
   .consultant-start-button { width: 100%; }
+  .consultant-handoff { align-items: stretch; flex-direction: column; max-width: none; }
+  .consultant-handoff-button { width: 100%; }
   .consultant-disclosure { margin-left: 17px; margin-right: 17px; }
   .consultant-next-step { display: block; padding: 30px 0; }
   .consultant-next-step .primary-button { margin-top: 22px; width: 100%; }

@@ -126,6 +126,8 @@ AI Consultant behavior:
 - It can recommend that a grievance pathway may be worth pursuing, that more information is needed, or that direct resolution may be preferable. The recommendation must explain uncertainty and is not a legal finding.
 - Guardrails reject system-prompt disclosure, secret extraction, prompt-injection instructions, fabricated or retaliatory complaints, guessed legal citations, and unsupported certainty. High-risk situations such as immediate danger, medical emergency, active fraud, or account compromise are directed to the relevant emergency or official support channel first.
 - The conversation does not submit a complaint, contact a seller or authority, or expose individual consumer data. The consumer must review and start a private case separately.
+- When the consumer is ready to continue, the consultant offers a `Log in and continue` action. The client normalizes the bounded spoken account, excludes contact, evidence, and payment-identifying fields from the handoff, and stores a versioned one-time envelope in same-tab `sessionStorage` for up to ten minutes. The login route is restricted to the report destination, and the report page consumes the envelope once before opening `Speak` mode.
+- The handoff is displayed as unverified consultant notes and seeded into an editable intake draft. The authenticated intake starts a separate Gemini Live session, confirms carried details, and still requires the normal review, tracking contact, and consent steps. Demo login is synthetic and is not production authentication.
 
 ### 3.2 Admin dashboard
 
@@ -419,6 +421,14 @@ rich payload is persisted in the private `complaint_intake_records` table,
 without raw audio or unfinished transcript retention. When aggregate consent
 is false, the asynchronous worker still produces private advisory analysis but
 does not create or update a public issue cluster.
+
+The consultant and intake are separate Gemini Live sessions. The consultant
+can hand off a bounded, unverified summary through the browser's same-tab
+`sessionStorage`; the envelope expires after ten minutes and is removed when
+consumed or discarded. This browser-only bridge is a demonstration convenience,
+not durable server-side state or an authentication mechanism. The intake shows
+the carried summary for review, seeds matching draft fields with review
+provenance, and supports `Start fresh` before microphone access begins.
 
 Gemini Live and ephemeral-token support are Preview features. The API key is
 read only from `GEMINI_API_KEY`; model names and temporary-session limits are

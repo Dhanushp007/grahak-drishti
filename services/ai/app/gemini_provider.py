@@ -65,6 +65,9 @@ CONSULTANT_LIVE_SYSTEM_INSTRUCTION = " ".join(
         "the recommendation as preliminary.",
         "At the end, summarize the known facts, unknown facts, suggested next step, "
         "and simple recommendation.",
+            "When the account is sufficiently clear, explain that the consumer may use "
+            "the visible 'Log in and continue' action to prepare a private editable case, "
+            "but never imply that filing is required or that the report is already proven.",
     )
 )
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Building2, CarFront, Check, CircleDollarSign, Droplets, FileText, FileUp, HeartPulse, House, Keyboard, Landmark, LoaderCircle, Mic, PackageSearch, Search, ShieldCheck, Sparkles, UserRoundCheck, Wifi } from "lucide-react";
 import indiaMap from "@svg-maps/india";
 
 import VoiceIntake from "../components/voice-intake.js";
 import { buildComplaintPayload, readApiResponse, validateComplaintForm } from "../lib/complaint.js";
+import { consumeConsultantHandoff, getConsultantTextFields } from "../lib/consultant-handoff.js";
 import { loginAsDemoCitizen } from "../lib/demo.js";
 import { DEMO_SCENARIOS } from "../lib/demo-scenarios.js";
 
@@ -251,6 +252,7 @@ export default function HomePage() {
 }
 
 export function ComplaintPage() {
+  const consultantHandoffReadRef = useRef(false);
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [submissionError, setSubmissionError] = useState("");
@@ -263,10 +265,17 @@ export function ComplaintPage() {
   const [demoIndex, setDemoIndex] = useState(0);
   const [loadedDemo, setLoadedDemo] = useState(null);
   const [intakeMode, setIntakeMode] = useState("text");
+  const [consultantHandoff, setConsultantHandoff] = useState(null);
 
   useEffect(() => {
     if (window.sessionStorage.getItem("gd-demo-contact")) {
       setDemoSession({ display_name: "Demo Citizen" });
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("intakeMode") === "voice") setIntakeMode("voice");
+    if (!consultantHandoffReadRef.current) {
+      consultantHandoffReadRef.current = true;
+      setConsultantHandoff(consumeConsultantHandoff());
     }
   }, []);
 
@@ -307,6 +316,19 @@ export function ComplaintPage() {
     setDemoIndex((current) => (current + 1) % DEMO_SCENARIOS.length);
     setErrors({});
     setSubmissionError("");
+  }
+
+  function useTextIntake() {
+    const fields = getConsultantTextFields(consultantHandoff);
+    setForm((current) => ({
+      ...current,
+      ...(fields.description ? { description: fields.description } : {}),
+      ...(fields.companyName ? { companyName: fields.companyName } : {}),
+      ...(fields.amountInvolved !== "" ? { amountInvolved: String(fields.amountInvolved) } : {}),
+      ...(fields.state ? { state: fields.state } : {}),
+    }));
+    setConsultantHandoff(null);
+    setIntakeMode("text");
   }
 
   async function submitPayload(payload) {
@@ -464,7 +486,7 @@ export function ComplaintPage() {
             <button type="button" role="tab" aria-selected={intakeMode === "voice"} className={intakeMode === "voice" ? "intake-mode-active" : ""} onClick={() => setIntakeMode("voice")}><Mic size={15} /> Speak</button>
           </div>
 
-          {intakeMode === "voice" ? <VoiceIntake onSubmitDraft={submitPayload} onUseText={() => setIntakeMode("text")} /> : <form onSubmit={submitComplaint} noValidate>
+          {intakeMode === "voice" ? <VoiceIntake onSubmitDraft={submitPayload} initialHandoff={consultantHandoff} onDiscardHandoff={() => setConsultantHandoff(null)} onUseText={useTextIntake} /> : <form onSubmit={submitComplaint} noValidate>
             <div className="field-group">
               <label htmlFor="description">What happened? <span>*</span></label>
               <textarea

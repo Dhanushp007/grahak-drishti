@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, CircleAlert, Mic, ShieldCheck, Sparkles, Square, Volume2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleAlert, LogIn, Mic, ShieldCheck, Sparkles, Square, Volume2 } from "lucide-react";
 
 import {
   buildConsultantLiveConfig,
@@ -12,17 +12,27 @@ import {
   sendOpeningPrompt,
   startMicrophoneInput,
 } from "../lib/gemini-live.js";
+import {
+  CONSULTANT_LOGIN_PATH,
+  CONSULTANT_TRANSCRIPT_MAX_CHARS,
+  createConsultantHandoff,
+  saveConsultantHandoff,
+} from "../lib/consultant-handoff.js";
+import { createInitialIntakeDraft } from "../lib/intake.js";
 
 const initialPlayback = { nextStartTime: 0 };
 
 export default function AIConsultant() {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const [canContinue, setCanContinue] = useState(false);
+  const [handoffStatus, setHandoffStatus] = useState("idle");
   const sessionRef = useRef(null);
   const microphoneRef = useRef(null);
   const playbackContextRef = useRef(null);
   const playbackRef = useRef(initialPlayback);
   const openingSentRef = useRef(false);
+  const userTranscriptRef = useRef("");
 
   function stopMicrophone() {
     microphoneRef.current?.stop();
@@ -47,7 +57,11 @@ export default function AIConsultant() {
     const input = serverContent?.inputTranscription || serverContent?.input_transcription;
     const output = serverContent?.outputTranscription || serverContent?.output_transcription;
 
-    if (input?.text) setStatus("listening");
+    if (input?.text) {
+      const nextTranscript = `${userTranscriptRef.current} ${input.text}`.trim();
+      userTranscriptRef.current = nextTranscript.slice(0, CONSULTANT_TRANSCRIPT_MAX_CHARS);
+      setStatus("listening");
+    }
     if (output?.text) setStatus("thinking");
     if (message?.data) {
       if (!playbackContextRef.current) playbackContextRef.current = new AudioContext();
@@ -55,6 +69,7 @@ export default function AIConsultant() {
       playPcmAudioChunk(playbackContextRef.current, message.data, playbackRef.current);
     }
     if (serverContent?.turnComplete) {
+      if (userTranscriptRef.current) setCanContinue(true);
       setStatus(microphoneRef.current ? "listening" : "ready");
     }
   }
@@ -111,6 +126,34 @@ export default function AIConsultant() {
   function stopVoice() {
     stopMicrophone();
     setStatus(sessionRef.current ? "ready" : "idle");
+  }
+
+  async function continueToPrivateCase() {
+    if (!userTranscriptRef.current.trim() || handoffStatus === "preparing") return;
+    setHandoffStatus("preparing");
+    setError("");
+    try {
+      const response = await fetch("/api/backend/api/v1/intake/normalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          draft: createInitialIntakeDraft(),
+          transcript: userTranscriptRef.current,
+          language_hint: "auto",
+        }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.draft) {
+        throw new Error(body?.error?.message || "The private case could not be prepared. Please try again.");
+      }
+      const handoff = createConsultantHandoff(body.draft);
+      saveConsultantHandoff(handoff);
+      closeSession();
+      window.location.assign(CONSULTANT_LOGIN_PATH);
+    } catch (handoffError) {
+      setHandoffStatus("error");
+      setError(handoffError instanceof Error ? handoffError.message : "The private case could not be prepared. Please try again.");
+    }
   }
 
   const conversationActive = status === "listening" || status === "thinking";
@@ -174,11 +217,12 @@ export default function AIConsultant() {
               {conversationActive ? <Square size={17} fill="currentColor" /> : <Mic size={18} />}
               {conversationActive ? "Stop conversation" : "Start conversation"}
             </button>
+            {canContinue && <div className="consultant-handoff" aria-live="polite"><div><strong>Ready to take the next step?</strong><p>Your account can be turned into private notes for you to review after login.</p></div><button className="consultant-handoff-button" type="button" onClick={continueToPrivateCase} disabled={handoffStatus === "preparing"}><LogIn size={17} />{handoffStatus === "preparing" ? "Preparing private case..." : "Log in and continue"}</button></div>}
           </div>
 
           {error && <div className="consultant-error" role="alert"><CircleAlert size={17} /> <span>{error}</span></div>}
 
-          <p className="consultant-disclosure"><Volume2 size={14} /> Voice audio is sent to Google Gemini for this live session. Audio and unfinished conversation notes are not retained by this application.</p>
+          <p className="consultant-disclosure"><Volume2 size={14} /> Voice audio is sent to Google Gemini for this live session. If you choose to continue, a short structured summary is kept temporarily in this browser tab for private review.</p>
         </section>
       </section>
 
