@@ -68,6 +68,7 @@ def normalize_intake(
             status="provider_unavailable",
             draft=payload.draft,
             missing_required=payload.draft.missing_required_fields(),
+            provider_error="not_configured",
         )
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -78,16 +79,18 @@ def normalize_intake(
             status="invalid_provider_output",
             draft=payload.draft,
             missing_required=payload.draft.missing_required_fields(),
+            provider_error="invalid_output",
         )
         return JSONResponse(
             status_code=status.HTTP_502_BAD_GATEWAY,
             content=response.model_dump(mode="json"),
         )
-    except GeminiProviderError:
+    except GeminiProviderError as exc:
         response = IntakeNormalizeResponse(
             status="provider_unavailable",
             draft=payload.draft,
             missing_required=payload.draft.missing_required_fields(),
+            provider_error=exc.reason,
         )
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

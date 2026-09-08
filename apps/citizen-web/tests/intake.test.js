@@ -193,6 +193,11 @@ test("does not treat provider failures as successful normalization", () => {
     status: "provider_unavailable",
     draft: createInitialIntakeDraft(),
   }), "Voice review is temporarily unavailable. Your captured draft is still here.");
+  assert.match(getIntakeNormalizationError({ ok: false }, {
+    status: "provider_unavailable",
+    provider_error: "rate_limited",
+    draft: createInitialIntakeDraft(),
+  }), /rate-limited/);
   assert.equal(getIntakeNormalizationError({ ok: true }, {
     status: "needs_review",
     draft: createInitialIntakeDraft(),

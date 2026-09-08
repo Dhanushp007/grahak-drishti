@@ -1,10 +1,13 @@
 import json
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from services.api.app.config import Settings, get_settings
 from services.api.app.intake_schemas import IntakeDraft, IntakeNormalizeRequest
+
+logger = logging.getLogger(__name__)
 
 LIVE_SYSTEM_INSTRUCTION = """
 You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.
@@ -130,6 +133,10 @@ PATCH_TOOL_DECLARATION = {
 class GeminiProviderError(Exception):
     """Base error for failures that should not expose provider details to users."""
 
+    def __init__(self, message: str, *, reason: str = "upstream_failure") -> None:
+        super().__init__(message)
+        self.reason = reason
+
 
 class GeminiNotConfiguredError(GeminiProviderError):
     pass
@@ -137,6 +144,38 @@ class GeminiNotConfiguredError(GeminiProviderError):
 
 class GeminiInvalidOutputError(GeminiProviderError):
     pass
+
+
+def classify_provider_exception(exc: BaseException) -> str:
+    code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+    code_text = str(code).lower()
+    message = str(exc).lower()
+    combined = f"{code_text} {message}"
+
+    if code == 429 or any(
+        marker in combined
+        for marker in ("429", "rate limit", "rate_limit", "quota", "resource_exhausted")
+    ):
+        return "rate_limited"
+    if code in {401, 403} or any(
+        marker in combined
+        for marker in (
+            "401",
+            "403",
+            "unauthenticated",
+            "unauthorized",
+            "permission denied",
+            "api key",
+        )
+    ):
+        return "not_authorized"
+    if code == 404 or "404" in combined or "not found" in combined:
+        return "model_unavailable"
+    if isinstance(exc, TimeoutError) or "timeout" in combined:
+        return "timeout"
+    if code == 400 or "invalid argument" in combined or "bad request" in combined:
+        return "invalid_request"
+    return "upstream_failure"
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,7 +237,19 @@ class GeminiProvider:
         except GeminiProviderError:
             raise
         except Exception as exc:
-            raise GeminiProviderError("Gemini token provisioning failed") from exc
+            reason = classify_provider_exception(exc)
+            logger.exception(
+                "Gemini token provisioning failed",
+                extra={
+                    "provider": "gemini",
+                    "model": self.settings.gemini_live_model,
+                    "reason": reason,
+                    "exception_type": type(exc).__name__,
+                },
+            )
+            raise GeminiProviderError(
+                "Gemini token provisioning failed", reason=reason
+            ) from exc
 
         token_name = getattr(token, "name", None)
         if not isinstance(token_name, str) or not token_name:
@@ -235,7 +286,19 @@ class GeminiProvider:
         except GeminiProviderError:
             raise
         except Exception as exc:
-            raise GeminiProviderError("Gemini normalization failed") from exc
+            reason = classify_provider_exception(exc)
+            logger.exception(
+                "Gemini normalization failed",
+                extra={
+                    "provider": "gemini",
+                    "model": self.settings.gemini_extraction_model,
+                    "reason": reason,
+                    "exception_type": type(exc).__name__,
+                },
+            )
+            raise GeminiProviderError(
+                "Gemini normalization failed", reason=reason
+            ) from exc
 
         response_text = getattr(response, "text", None)
         if not isinstance(response_text, str) or not response_text.strip():
