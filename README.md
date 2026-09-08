@@ -168,7 +168,8 @@ Configure the API before starting the citizen app when testing voice intake:
 ```powershell
 $env:GEMINI_API_KEY = "your-key"
 $env:GEMINI_LIVE_MODEL = "gemini-3.1-flash-live-preview"
-$env:GEMINI_EXTRACTION_MODEL = "gemini-3.8-flash"
+$env:GEMINI_EXTRACTION_MODEL = "gemini-2.5-flash"
+$env:GEMINI_REQUEST_TIMEOUT_MS = "15000"
 ```
 
 The default models are configurable because Gemini Live and ephemeral tokens

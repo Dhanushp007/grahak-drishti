@@ -22,3 +22,6 @@ def test_classifies_common_gemini_provider_failures_without_raw_details() -> Non
         classify_provider_exception(ProviderException(500, "upstream timed out"))
         == "timeout"
     )
+    assert classify_provider_exception(ProviderException(504, "DEADLINE_EXCEEDED")) == (
+        "timeout"
+    )
