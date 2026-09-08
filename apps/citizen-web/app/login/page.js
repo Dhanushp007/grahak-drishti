@@ -55,9 +55,9 @@ export default function LoginPage() {
         </div>
         <div className="form-card login-card">
           <div className="form-card-heading">
-            <div><p className="eyebrow">Citizen demo</p><h2>Open the prepared journey</h2></div>
+            <div><p className="eyebrow">Citizen demo</p><h2>Continue to the demo</h2></div>
           </div>
-          <p className="login-card-copy">{isConsultantContinuation ? "Your consultant notes are ready. Continue in Speak mode to review them and add anything still missing." : "Use the prepared synthetic profile to follow the refund-delay story from private report to public issue signal."}</p>
+          <p className="login-card-copy">{isConsultantContinuation ? "Your consultant notes are ready. Continue in Speak mode to review them and add anything still missing." : "Use a synthetic citizen profile to try the complete complaint-to-signal journey."}</p>
           {error && <p className="submission-error" role="alert">{error}</p>}
           <button className="submit-button" type="button" onClick={signIn} disabled={isLoggingIn}>
             {isLoggingIn ? <><LoaderCircle className="spin" size={18} /> Signing you in...</> : isConsultantContinuation ? <>Log in and continue to Speak <ArrowRight size={18} /></> : <>Continue as citizen <UserRoundCheck size={18} /></>}

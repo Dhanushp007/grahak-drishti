@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, FileText, FileUp, Keyboard, LoaderCircle, Mic, Search, ShieldCheck, Sparkles, UserRoundCheck } from "lucide-react";
+import { ArrowRight, Check, Copy, FileText, FileUp, Keyboard, LoaderCircle, Mic, Search, ShieldCheck, Sparkles, UserRoundCheck } from "lucide-react";
 import indiaMap from "@svg-maps/india";
 
 import VoiceIntake from "../components/voice-intake.js";
@@ -16,7 +16,7 @@ const initialForm = {
   amountInvolved: "",
   email: "",
   phone: "",
-  state: "Maharashtra",
+  state: "",
 };
 
 const landingSteps = [
@@ -42,6 +42,7 @@ export default function HomePage() {
   const [activeLandingStep, setActiveLandingStep] = useState(0);
   const [selectedState, setSelectedState] = useState(null);
   const landingStep = landingSteps[activeLandingStep];
+  const selectedLocation = selectedState ? indiaMap.locations.find((location) => location.id === selectedState) : null;
 
   useEffect(() => {
     const cardTimer = window.setInterval(() => {
@@ -127,7 +128,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="signal-summary">
-            <div className="signal-summary-lead"><span>{selectedState ? "Selected state" : "India overview"}</span><strong>{selectedState ? indiaMap.locations.find((location) => location.id === selectedState)?.name : "Patterns become visible when complaints are seen together."}</strong><p>{selectedState ? `Relative synthetic signal: ${signalLevel(stateSignals[selectedState] || 10)}.` : "The map is a visual guide to aggregate issue intensity, not official government statistics."}</p></div>
+            <div className="signal-summary-lead"><span>{selectedLocation ? "Selected state" : "India overview"}</span><strong>{selectedLocation ? selectedLocation.name : "Patterns become visible when complaints are seen together."}</strong>{selectedLocation ? <><div className="state-signal-score"><b>{stateSignals[selectedState] || 10}</b><span>/ 100 relative signal</span></div><p>{signalLevel(stateSignals[selectedState] || 10).replace(/^\w/, (letter) => letter.toUpperCase())} synthetic signal intensity for this state. Select another state to compare.</p></> : <p>The map is a visual guide to aggregate issue intensity, not official government statistics. Select a state to inspect its relative signal.</p>}</div>
             <a className="signal-summary-link" href="/issues">Explore public issue signals <ArrowRight size={16} /></a>
           </div>
         </div>
@@ -181,6 +182,7 @@ export function ComplaintPage() {
   const [loadedDemo, setLoadedDemo] = useState(null);
   const [intakeMode, setIntakeMode] = useState("text");
   const [consultantHandoff, setConsultantHandoff] = useState(null);
+  const [docketCopyStatus, setDocketCopyStatus] = useState("");
 
   useEffect(() => {
     if (window.sessionStorage.getItem("gd-demo-contact")) {
@@ -310,6 +312,15 @@ export function ComplaintPage() {
     return intelligence?.analysis?.routing?.reason || "An authorized reviewer should assess this aggregate signal.";
   }
 
+  async function copyDocket() {
+    try {
+      await navigator.clipboard.writeText(submission.docket_number);
+      setDocketCopyStatus("Copied");
+    } catch {
+      setDocketCopyStatus("Copy unavailable");
+    }
+  }
+
   if (submission) {
     return (
       <main className="page-shell success-shell">
@@ -328,7 +339,8 @@ export function ComplaintPage() {
           </p>
           <div className="docket-box">
             <span>Docket number</span>
-            <strong>{submission.docket_number}</strong>
+            <div className="docket-value"><strong>{submission.docket_number}</strong><button className="docket-copy-button" type="button" onClick={copyDocket} aria-label="Copy docket number" title="Copy docket number"><Copy size={16} /></button></div>
+            {docketCopyStatus && <small className="docket-copy-status" role="status">{docketCopyStatus}</small>}
           </div>
           <a className="primary-button" href={`/track?docket=${submission.docket_number}`}>
             Track this report <ArrowRight size={18} />
@@ -345,7 +357,7 @@ export function ComplaintPage() {
                 <span><strong>Severity</strong>{intelligence.analysis?.classification?.severity?.value || "Needs review"}</span>
                 <span><strong>Confidence</strong>{Math.round(Number(intelligence.analysis?.classification?.issue?.confidence || 0) * 100)}%</span>
               </div>
-              {intelligence.matched_issue ? <a href={`/issues/${intelligence.matched_issue.cluster_key}`} className="analysis-link">See {intelligence.matched_issue.reported_count.toLocaleString()} similar reports <ArrowRight size={15} /></a> : <span className="analysis-pending">No matching public issue signal yet.</span>}
+              {intelligence.matched_issue ? <a href={`/issues/${intelligence.matched_issue.cluster_key}`} className="analysis-link">See {intelligence.matched_issue.reported_count.toLocaleString()} similar reports and add evidence <ArrowRight size={15} /></a> : <span className="analysis-pending">No matching public issue signal yet.</span>}
               <p className="analysis-recommendation"><strong>Recommended next step</strong> · {advisoryRecommendation()}</p>
               {intelligence.analysis?.dark_pattern?.status === "potential_concern" && <p className="dark-pattern-note"><strong>Potential dark pattern detected</strong> · {intelligence.analysis.dark_pattern.explanation} This is an advisory signal for authorized review, not a legal finding.</p>}
               <span className="analysis-pending">Routing is advisory and does not replace existing grievance systems.</span>
@@ -434,6 +446,7 @@ export function ComplaintPage() {
               <div className="field-group">
                 <label htmlFor="state">State <span className="optional">(optional)</span></label>
                 <select id="state" name="state" value={form.state} onChange={updateField}>
+                  <option value="">Prefer not to say</option>
                   {['Maharashtra', 'Karnataka', 'Delhi', 'Uttar Pradesh', 'Tamil Nadu', 'Gujarat', 'West Bengal', 'Telangana', 'Rajasthan', 'Kerala', 'Bihar', 'Punjab', 'Madhya Pradesh', 'Andhra Pradesh', 'Odisha', 'Haryana', 'Assam', 'Jharkhand', 'Chhattisgarh', 'Uttarakhand'].map((state) => <option key={state}>{state}</option>)}
                 </select>
               </div>
@@ -441,7 +454,7 @@ export function ComplaintPage() {
 
             <div className="evidence-row">
               <div className="evidence-icon" aria-hidden="true"><FileUp size={20} /></div>
-              <div><strong>Have evidence ready?</strong><p>Invoices and screenshots can be added after your docket is created.</p></div>
+              <div><strong>Have evidence ready?</strong><p>Evidence is added on the matching issue page after your docket is created, where it strengthens the aggregate signal.</p></div>
             </div>
 
             <fieldset className="contact-fields">

@@ -112,6 +112,11 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .docket-box span, .docket-box strong { display: block; font-family: Arial, sans-serif; }
 .docket-box span { color: #a6bbb2; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
 .docket-box strong { font-size: 27px; letter-spacing: .08em; margin-top: 7px; }
+.docket-value { align-items: center; display: flex; gap: 12px; justify-content: center; }
+.docket-value strong { margin-top: 7px; }
+.docket-copy-button { align-items: center; background: transparent; border: 1px solid rgba(255,255,255,.35); color: white; cursor: pointer; display: inline-flex; height: 30px; justify-content: center; margin-top: 7px; padding: 0; width: 30px; }
+.docket-copy-button:hover, .docket-copy-button:focus-visible { border-color: var(--yellow); color: var(--yellow); }
+.docket-copy-status { color: var(--yellow); display: block; font-family: var(--font-body); font-size: 10px; margin-top: 8px; }
 .text-button { background: none; border: 0; color: var(--teal); cursor: pointer; display: block; font-family: Arial, sans-serif; font-size: 12px; margin: 25px auto 0; padding: 4px; text-decoration: underline; }
 .analysis-result { background: var(--mint); margin: 36px 0 0; padding: 20px; text-align: left; }
 .analysis-result h2 { font-size: 25px; }
@@ -610,6 +615,9 @@ textarea { min-height: 132px; }
 .signal-summary-lead > span { color: var(--yellow); font-family: var(--font-body); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
 .signal-summary-lead strong { display: block; font-family: var(--font-display); font-size: 26px; line-height: 1.15; margin-top: 28px; max-width: 250px; }
 .signal-summary-lead p { color: #c9d9d1; font-family: var(--font-body); font-size: 12px; line-height: 1.5; margin: 14px 0 0; max-width: 290px; }
+.state-signal-score { align-items: baseline; display: flex; gap: 8px; margin-top: 20px; }
+.state-signal-score b { color: var(--yellow); font-family: var(--font-number); font-size: 34px; }
+.state-signal-score span { color: #a9c0b6; font-family: var(--font-body); font-size: 10px; }
 .signal-summary-grid { background: #fff; border: 1px solid var(--line); display: grid; gap: 1px; grid-template-columns: 1fr 1fr; }
 .signal-summary-grid div { border: 1px solid var(--line); display: flex; flex-direction: column; gap: 5px; min-height: 91px; padding: 16px; }
 .signal-summary-grid strong { color: var(--teal); font-family: var(--font-number); font-size: 23px; }
