@@ -322,6 +322,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
   const microphoneRef = useRef(null);
   const playbackContextRef = useRef(null);
   const playbackRef = useRef(initialPlayback);
+  const playbackResumeTimerRef = useRef(null);
 
   function updateDraft(nextDraft, updatedPath = "") {
     draftRef.current = nextDraft;
@@ -370,6 +371,11 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
     microphoneRef.current = null;
     sessionRef.current?.close?.();
     sessionRef.current = null;
+    if (playbackResumeTimerRef.current) {
+      window.clearTimeout(playbackResumeTimerRef.current);
+      playbackResumeTimerRef.current = null;
+    }
+    microphoneRef.current?.setMuted?.(false);
     if (playbackContextRef.current) {
       void playbackContextRef.current.close();
       playbackContextRef.current = null;
@@ -432,9 +438,18 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
     }
     if (output?.text) setAssistantTranscript((current) => `${current} ${output.text}`.trim());
     if (message?.data) {
-      if (!playbackContextRef.current) playbackContextRef.current = new AudioContext();
+      microphoneRef.current?.setMuted?.(true);
+      if (!playbackContextRef.current) {
+        playbackContextRef.current = new AudioContext({ latencyHint: "interactive" });
+      }
       void playbackContextRef.current.resume();
-      playPcmAudioChunk(playbackContextRef.current, message.data, playbackRef.current);
+      const playbackEnd = playPcmAudioChunk(playbackContextRef.current, message.data, playbackRef.current);
+      if (playbackResumeTimerRef.current) window.clearTimeout(playbackResumeTimerRef.current);
+      const resumeDelay = Math.max(120, (playbackEnd - playbackContextRef.current.currentTime) * 1000 + 120);
+      playbackResumeTimerRef.current = window.setTimeout(() => {
+        microphoneRef.current?.setMuted?.(false);
+        playbackResumeTimerRef.current = null;
+      }, resumeDelay);
     }
     handleToolCall(message);
   }

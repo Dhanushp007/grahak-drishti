@@ -234,15 +234,22 @@ export async function startMicrophoneInput(session) {
     throw new Error("This browser cannot access a microphone. You can continue by typing instead.");
   }
   const mediaStream = await navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+    audio: {
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: false,
+    },
   });
-  const audioContext = new AudioContext();
+  const audioContext = new AudioContext({ latencyHint: "interactive" });
   await audioContext.resume();
   const source = audioContext.createMediaStreamSource(mediaStream);
   const processor = audioContext.createScriptProcessor(4096, 1, 1);
   const silentGain = audioContext.createGain();
+  const captureState = { muted: false };
   silentGain.gain.value = 0;
   processor.onaudioprocess = (event) => {
+    if (captureState.muted) return;
     const samples = event.inputBuffer.getChannelData(0);
     session.sendRealtimeInput({
       audio: {
@@ -255,6 +262,9 @@ export async function startMicrophoneInput(session) {
   processor.connect(silentGain);
   silentGain.connect(audioContext.destination);
   return {
+    setMuted(muted) {
+      captureState.muted = Boolean(muted);
+    },
     stop() {
       processor.onaudioprocess = null;
       source.disconnect();
@@ -283,7 +293,8 @@ export function playPcmAudioChunk(audioContext, base64Audio, playback) {
   const source = audioContext.createBufferSource();
   source.buffer = buffer;
   source.connect(audioContext.destination);
-  const startAt = Math.max(audioContext.currentTime, playback.nextStartTime);
+  const startAt = Math.max(audioContext.currentTime + 0.015, playback.nextStartTime);
   source.start(startAt);
   playback.nextStartTime = startAt + buffer.duration;
+  return playback.nextStartTime;
 }
