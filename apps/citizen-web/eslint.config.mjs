@@ -6,18 +6,22 @@ export default defineConfig([
   globalIgnores([".next/**", "out/**", "build/**"]),
   js.configs.recommended,
   {
-    files: ["app/**/*.js", "lib/**/*.js", "tests/**/*.js"],
+    files: ["app/**/*.js", "lib/**/*.js", "components/**/*.js", "tests/**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
       parserOptions: { ecmaFeatures: { jsx: true } },
       globals: {
         alert: "readonly",
+        atob: "readonly",
+        AudioContext: "readonly",
+        btoa: "readonly",
         document: "readonly",
         fetch: "readonly",
         FormData: "readonly",
         setTimeout: "readonly",
         URLSearchParams: "readonly",
+        navigator: "readonly",
         window: "readonly",
       },
     },

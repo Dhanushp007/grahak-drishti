@@ -1,6 +1,51 @@
 const ALLOWED_PATH_PATTERN = /^(complaint|consumer|incident|business|transaction|resolution_attempts|requested_remedy|escalation|evidence|consents|data_quality|provenance)(?:\.[a-z][a-z0-9_]*|\[\d+\])*$/;
 const SYSTEM_PATHS = new Set(["complaint.docket_number", "complaint.submitted_at"]);
 
+export const GUIDED_INTAKE_SECTIONS = [
+  {
+    id: "story",
+    label: "Your story",
+    question: "What happened?",
+    trackedPaths: ["complaint.description", "incident.what_happened", "incident.what_was_promised"],
+    completionPaths: ["complaint.description", "incident.what_happened"],
+  },
+  {
+    id: "business",
+    label: "Business and purchase",
+    question: "Which company, seller, or marketplace was involved?",
+    trackedPaths: ["business.company_name", "business.seller_name", "transaction.product_or_service", "transaction.order_reference", "transaction.amount_disputed"],
+    completionPaths: ["business.company_name", "business.seller_name"],
+  },
+  {
+    id: "timing",
+    label: "Dates and payment",
+    question: "When did this happen and what amount was involved?",
+    trackedPaths: ["incident.occurred_on", "incident.discovered_on", "transaction.transaction_date", "transaction.amount_paid", "transaction.amount_disputed", "transaction.payment_method"],
+    completionPaths: ["incident.occurred_on", "transaction.amount_disputed", "transaction.amount_paid"],
+  },
+  {
+    id: "contact",
+    label: "Your details",
+    question: "How can you receive updates about this report?",
+    trackedPaths: ["consumer.full_name", "consumer.contact.email", "consumer.contact.phone", "consumer.address.city", "consumer.address.state"],
+    completionPaths: ["consumer.contact.email", "consumer.contact.phone"],
+  },
+  {
+    id: "resolution",
+    label: "Resolution",
+    question: "What would you like the business to do?",
+    trackedPaths: ["resolution_attempts", "requested_remedy.primary", "requested_remedy.amount_requested", "evidence"],
+    completionPaths: ["requested_remedy.primary", "resolution_attempts", "evidence"],
+  },
+  {
+    id: "consent",
+    label: "Consent",
+    question: "Please confirm that we may process this complaint.",
+    trackedPaths: ["consents.case_processing", "consents.aggregate_intelligence"],
+    completionPaths: ["consents.case_processing"],
+  },
+];
+
 export function createInitialIntakeDraft() {
   return {
     schema_version: "complaint-intake.v1",
@@ -101,6 +146,32 @@ export function createInitialIntakeDraft() {
   };
 }
 
+const VOICE_SESSION_VERSION = 1;
+
+export function serializeVoiceIntakeSession(draft, transcript = "", interimTranscript = "") {
+  return JSON.stringify({
+    version: VOICE_SESSION_VERSION,
+    draft,
+    transcript,
+    interimTranscript,
+  });
+}
+
+export function parseVoiceIntakeSession(serialized) {
+  if (typeof serialized !== "string" || !serialized.trim()) return null;
+  try {
+    const parsed = JSON.parse(serialized);
+    if (!parsed || parsed.version !== VOICE_SESSION_VERSION || !parsed.draft || Array.isArray(parsed.draft)) return null;
+    return {
+      draft: parsed.draft,
+      transcript: typeof parsed.transcript === "string" ? parsed.transcript : "",
+      interimTranscript: typeof parsed.interimTranscript === "string" ? parsed.interimTranscript : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -160,6 +231,27 @@ export function getMissingRequiredIntakeFields(draft) {
   if (!email && !phone) missing.push("consumer.contact");
   if (draft?.consents?.case_processing !== true) missing.push("consents.case_processing");
   return missing;
+}
+
+export function hasIntakeStory(draft) {
+  return Boolean(
+    draft?.complaint?.description?.trim()
+    || draft?.incident?.what_happened?.trim(),
+  );
+}
+
+export function getIntakeNormalizationError(response, body) {
+  if (response?.ok && body?.draft && ["ok", "needs_review"].includes(body.status)) {
+    return "";
+  }
+  if (body?.error?.message) return body.error.message;
+  if (body?.status === "provider_unavailable") {
+    return "Voice review is temporarily unavailable. Your captured draft is still here.";
+  }
+  if (body?.status === "invalid_provider_output") {
+    return "Voice review returned an invalid result. Your captured draft is still here.";
+  }
+  return "The draft could not be prepared for review.";
 }
 
 export function getReviewFlags(draft) {
@@ -226,4 +318,39 @@ export function formatIntakePath(path) {
     .slice(-1)[0]
     .replaceAll("_", " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export function getIntakePathValue(draft, path) {
+  return pathSegments(path).reduce((value, segment) => value?.[segment], draft);
+}
+
+function hasIntakeValue(value) {
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "string") return Boolean(value.trim());
+  if (typeof value === "boolean") return value;
+  return value !== null && value !== undefined;
+}
+
+export function getGuidedIntakeProgress(draft) {
+  const sections = GUIDED_INTAKE_SECTIONS.map((section) => {
+    const capturedPaths = section.trackedPaths.filter((path) => hasIntakeValue(getIntakePathValue(draft, path)));
+    const complete = section.completionPaths.some((path) => hasIntakeValue(getIntakePathValue(draft, path)));
+    return {
+      ...section,
+      capturedCount: capturedPaths.length,
+      totalCount: section.trackedPaths.length,
+      complete,
+    };
+  });
+  const currentSectionIndex = sections.findIndex((section) => !section.complete);
+  const activeSectionIndex = currentSectionIndex === -1 ? sections.length - 1 : currentSectionIndex;
+  const allSectionsComplete = currentSectionIndex === -1;
+  return {
+    sections,
+    activeSection: allSectionsComplete
+      ? { ...sections[activeSectionIndex], question: "Everything is captured. Review your details before submitting." }
+      : sections[activeSectionIndex],
+    capturedCount: sections.reduce((total, section) => total + section.capturedCount, 0),
+    totalCount: sections.reduce((total, section) => total + section.totalCount, 0),
+  };
 }

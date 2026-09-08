@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "GRAHAK-DRISHTI | Report a consumer issue",
-  description: "Report a consumer issue and receive a docket to track it.",
+  title: "GRAHAK-DRISHTI | Consumer perspective",
+  description: "Create a private consumer case, track it, and see aggregate issue signals.",
 };
 
 export default function RootLayout({ children }) {

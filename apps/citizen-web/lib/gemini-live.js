@@ -1,11 +1,18 @@
 export const LIVE_SYSTEM_INSTRUCTION = [
   "You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.",
   "Speak in the language the consumer uses, including English, Hindi, and natural Hinglish code-switching.",
-  "Ask one short follow-up question at a time and do not invent names, dates, amounts, order references, contact details, legal findings, or evidence.",
+  "Run a guided intake rather than a free-form chat: ask exactly one short question at a time, wait for the answer, and do not move ahead by guessing.",
+  "Follow this order: what happened; company, seller, marketplace, and product; order references, dates, amounts, payment, and refund; the consumer's name, tracking contact, and address; support attempts, evidence, and requested remedy; then consent.",
+  "When one answer contains one or more details, call patch_intake_draft for every explicitly stated field before speaking; never merely acknowledge a captured detail without updating the draft.",
+  "If the consumer says fill the Live draft, update the draft, or similar, review the conversation so far and call patch_intake_draft for every fact explicitly stated in it before continuing.",
+  "Do not invent names, dates, amounts, order references, contact details, legal findings, or evidence.",
+  "If an optional detail is unknown, not applicable, or the consumer wants to skip it, leave it empty and continue.",
+  "Ask address details one at a time and never require more address information than the consumer is comfortable sharing.",
+  "After each answer, briefly confirm what was captured in natural language and ask only for the next missing detail.",
+  "At the end, summarize the captured details, invite corrections, and ask explicitly whether the consumer allows case processing; set case_processing only after an explicit yes.",
   "Treat the consumer's account as an allegation or report, not an established fact.",
   "Use the patch_intake_draft tool only to organize a private editable draft.",
   "Never submit a complaint, contact a seller or authority, or claim that a regulator has accepted anything.",
-  "Prioritize a description, one tracking contact, and case-processing consent, then ask about useful optional details.",
   "A human must review and confirm every field before official submission.",
 ].join(" ");
 
@@ -22,6 +29,43 @@ const PATCH_TOOL = {
     required: ["path"],
   },
 };
+
+export function getLiveToolCalls(message) {
+  const toolCall = message?.toolCall || message?.tool_call;
+  return toolCall?.functionCalls || toolCall?.function_calls || [];
+}
+
+export function parseLiveToolCallArgs(call) {
+  const rawArgs = call?.args ?? call?.arguments ?? {};
+  const args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+  if (!args || typeof args !== "object" || Array.isArray(args)) {
+    throw new Error("The voice assistant returned invalid draft arguments.");
+  }
+  return args;
+}
+
+export function getLiveInputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.inputTranscription || serverContent?.input_transcription;
+}
+
+export function getLiveInterimInputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.interimInputTranscription || serverContent?.interim_input_transcription;
+}
+
+export function getLiveOutputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.outputTranscription || serverContent?.output_transcription;
+}
+
+export function buildLiveToolResponse(call, response) {
+  return {
+    id: call?.id,
+    name: call?.name || "patch_intake_draft",
+    response,
+  };
+}
 
 export function buildLiveConfig() {
   return {

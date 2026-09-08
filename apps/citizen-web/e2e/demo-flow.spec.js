@@ -3,11 +3,15 @@ import { expect, test } from "@playwright/test";
 test("completes citizen report, evidence, and government intelligence journey", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/");
-  const citizenLogin = page.waitForResponse(
-    (response) => response.url().includes("/api/backend/api/v1/demo/login") && response.request().method() === "POST",
-  );
-  await page.getByRole("button", { name: "Citizen demo" }).click();
-  await expect((await citizenLogin).status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "Make your complaint count." })).toBeVisible();
+  await page.getByRole("link", { name: "File a case" }).first().click();
+  await expect(page).toHaveURL(/\/login\?returnTo=%2Freport$/);
+  await expect(page.getByRole("heading", { name: "Sign in to begin." })).toBeVisible();
+  const loginButton = page.getByRole("button", { name: "Continue as citizen" });
+  await loginButton.scrollIntoViewIfNeeded();
+  await expect(loginButton).toBeEnabled();
+  await loginButton.click();
+  await expect(page).toHaveURL(/\/report$/);
   await expect(page.locator(".demo-session")).toContainText("Demo Citizen");
 
   await page.getByRole("button", { name: "Use a demo complaint" }).click();
