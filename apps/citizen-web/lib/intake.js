@@ -301,6 +301,12 @@ export function getIntakeNormalizationError(response, body) {
   }
   if (body?.error?.message) return body.error.message;
   if (body?.status === "provider_unavailable") {
+    if (body.provider_error === "rate_limited") {
+      return "Gemini is temporarily rate-limited. Your captured draft is still here; please try again shortly.";
+    }
+    if (body.provider_error === "not_configured") {
+      return "Voice review is not configured for this environment. Your captured draft is still here.";
+    }
     return "Voice review is temporarily unavailable. Your captured draft is still here.";
   }
   if (body?.status === "invalid_provider_output") {

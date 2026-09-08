@@ -103,4 +103,22 @@ def test_normalize_endpoint_exposes_provider_failure_status(client: TestClient) 
     assert response.status_code == 503
     body = response.json()
     assert body["status"] == "provider_unavailable"
+    assert body["provider_error"] == "not_configured"
     assert body["draft"]["complaint"]["description"] is None
+
+
+def test_normalize_endpoint_exposes_safe_rate_limit_reason(client: TestClient) -> None:
+    from services.ai.app.gemini_provider import GeminiProviderError
+
+    class RateLimitedProvider:
+        def normalize(self, request):
+            raise GeminiProviderError("quota exhausted", reason="rate_limited")
+
+    app.dependency_overrides[provider_dependency] = lambda: RateLimitedProvider()
+    response = client.post(
+        "/api/v1/intake/normalize",
+        json={"draft": {}, "transcript": "My refund is delayed."},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["provider_error"] == "rate_limited"
