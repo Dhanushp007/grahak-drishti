@@ -135,6 +135,13 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .success-icon.small { height: 42px; margin: 0; width: 42px; }
 .result-status { color: var(--muted); font-family: Arial, sans-serif; font-size: 13px; margin: 24px 0; text-transform: capitalize; }
 .result-status strong { color: var(--teal); }
+.result-status-card { background: var(--mint); border-left: 4px solid var(--teal); margin: 24px 0 28px; padding: 16px 18px; }
+.result-status-card span, .result-status-card strong, .result-status-card p { display: block; font-family: var(--font-body); }
+.result-status-card span { color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.result-status-card strong { color: var(--teal); font-family: var(--font-display); font-size: 22px; margin-top: 4px; text-transform: capitalize; }
+.result-status-card p { color: var(--muted); font-size: 12px; margin: 5px 0 0; }
+.result-status-card.status-submitted { border-left-color: var(--coral); }
+.result-status-card.status-submitted strong { color: var(--coral-dark); }
 .timeline-list { list-style: none; margin: 0; padding: 0; }
 .timeline-list li { display: flex; gap: 14px; min-height: 74px; position: relative; }
 .timeline-list li:not(:last-child)::before { background: var(--line); content: ""; height: calc(100% - 22px); left: 6px; position: absolute; top: 20px; width: 1px; }
@@ -142,6 +149,9 @@ input::placeholder, textarea::placeholder { color: #99a49e; }
 .timeline-list strong, .timeline-list p { font-family: Arial, sans-serif; }
 .timeline-list strong { font-size: 12px; }
 .timeline-list p { color: var(--muted); font-size: 12px; line-height: 1.4; margin: 5px 0 0; }
+.timeline-list li.is-current .timeline-dot { background: var(--teal); box-shadow: 0 0 0 1px var(--teal); }
+.timeline-event-heading { align-items: baseline; display: flex; gap: 12px; justify-content: space-between; }
+.timeline-event-heading time { color: var(--muted); font-family: var(--font-body); font-size: 10px; white-space: nowrap; }
 .issues-heading { margin: 90px 7% 48px; max-width: 580px; }
 .issue-list { margin: 0 7% 90px; }
 .issue-list-item { align-items: center; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); display: grid; gap: 28px; grid-template-columns: 1fr 180px 24px; padding: 26px 0; text-decoration: none; transition: padding .2s, background .2s; }
