@@ -30,6 +30,7 @@ import {
   requestLiveToken,
   sendOpeningPrompt,
   sendTextMessage,
+  stopPcmAudio,
   startMicrophoneInput,
 } from "../lib/gemini-live.js";
 
@@ -377,6 +378,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
     }
     microphoneRef.current?.setMuted?.(false);
     if (playbackContextRef.current) {
+      stopPcmAudio(playbackContextRef.current, playbackRef.current);
       void playbackContextRef.current.close();
       playbackContextRef.current = null;
     }

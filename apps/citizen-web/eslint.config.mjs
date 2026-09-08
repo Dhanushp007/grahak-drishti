@@ -15,6 +15,7 @@ export default defineConfig([
         alert: "readonly",
         atob: "readonly",
         AudioContext: "readonly",
+        AudioWorkletNode: "readonly",
         btoa: "readonly",
         document: "readonly",
         fetch: "readonly",
