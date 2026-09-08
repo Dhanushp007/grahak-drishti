@@ -313,6 +313,10 @@ class IntakeNormalizeResponse(IntakeModel):
     provider_error: ProviderErrorKind | None = None
 
 
+class LiveTokenRequest(IntakeModel):
+    mode: Literal["intake", "consultant"] = "intake"
+
+
 class LiveTokenResponse(IntakeModel):
     token: str
     model: str

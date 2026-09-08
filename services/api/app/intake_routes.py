@@ -13,6 +13,7 @@ from services.ai.app.gemini_provider import (
 from services.api.app.intake_schemas import (
     IntakeNormalizeRequest,
     IntakeNormalizeResponse,
+    LiveTokenRequest,
     LiveTokenResponse,
 )
 
@@ -33,9 +34,10 @@ def _provider_error_response(code: str, message: str, status_code: int) -> JSONR
 @router.post("/live-token", response_model=LiveTokenResponse)
 def issue_live_token(
     provider: Annotated[GeminiProvider, Depends(provider_dependency)],
+    payload: LiveTokenRequest | None = None,
 ) -> LiveTokenResponse | JSONResponse:
     try:
-        token = provider.create_live_token()
+        token = provider.create_live_token(payload.mode if payload else "intake")
     except GeminiNotConfiguredError:
         return _provider_error_response(
             "AI_PROVIDER_NOT_CONFIGURED",

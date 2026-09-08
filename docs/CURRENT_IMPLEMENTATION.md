@@ -78,7 +78,9 @@ Routes:
 
 | Route | Purpose | Implementation |
 | --- | --- | --- |
-| `/` | Complaint intake and citizen demo login | `app/page.js` |
+| `/` | Citizen landing page and entry points | `app/page.js` |
+| `/consultant` | Interactive AI Consultant for first-step grievance guidance | `app/consultant/page.js` and `components/ai-consultant.js` |
+| `/report` | Complaint intake and citizen demo login | `app/report/page.js` and `app/page.js` |
 | `/track` | Private complaint tracking | `app/track/page.js` |
 | `/issues` | Public aggregate issue list | `app/issues/page.js` |
 | `/issues/[slug]` | Public aggregate issue detail and corroboration | `app/issues/[slug]/page.js` |
@@ -115,6 +117,17 @@ Client API modules:
 - `lib/complaint.js`: validation and normalized complaint/tracking payloads.
 - `lib/demo.js`: citizen demo login request.
 - `lib/issues.js`: public issue reads, corroboration, metadata evidence, and upload requests.
+
+AI Consultant behavior:
+
+- The landing page opens `/consultant` in a new tab so the consumer can keep the starting page available.
+- The consultant uses the Gemini Live voice/audio path and presents a voice-only conversation surface.
+- Its short-lived Live token is requested with `mode=consultant`, which uses a separate advisory system instruction and no complaint-draft mutation tool.
+- It can recommend that a grievance pathway may be worth pursuing, that more information is needed, or that direct resolution may be preferable. The recommendation must explain uncertainty and is not a legal finding.
+- Guardrails reject system-prompt disclosure, secret extraction, prompt-injection instructions, fabricated or retaliatory complaints, guessed legal citations, and unsupported certainty. High-risk situations such as immediate danger, medical emergency, active fraud, or account compromise are directed to the relevant emergency or official support channel first.
+- The conversation does not submit a complaint, contact a seller or authority, or expose individual consumer data. The consumer must review and start a private case separately.
+- When the consumer is ready to continue, the consultant offers a `Log in and continue` action. The client normalizes the bounded spoken account, excludes contact, evidence, and payment-identifying fields from the handoff, and stores a versioned one-time envelope in same-tab `sessionStorage` for up to ten minutes. The login route is restricted to the report destination, and the report page consumes the envelope once before opening `Speak` mode.
+- The handoff is displayed as unverified consultant notes and seeded into an editable intake draft. The authenticated intake starts a separate Gemini Live session, confirms carried details, and still requires the normal review, tracking contact, and consent steps. Demo login is synthetic and is not production authentication.
 
 ### 3.2 Admin dashboard
 
@@ -174,6 +187,7 @@ Demo login is intentionally lightweight. It returns a role/display name and synt
 | `POST` | `/api/v1/complaints` | Creates a private complaint and returns a docket |
 | `POST` | `/api/v1/complaints/track` | Tracks a complaint using docket plus matching contact |
 | `POST` | `/api/v1/complaints/intelligence` | Returns advisory analysis or `202` while processing |
+| `POST` | `/api/v1/intake/live-token` | Issues a short-lived constrained Gemini Live session for intake or consultant mode |
 
 Request validation:
 
@@ -407,6 +421,14 @@ rich payload is persisted in the private `complaint_intake_records` table,
 without raw audio or unfinished transcript retention. When aggregate consent
 is false, the asynchronous worker still produces private advisory analysis but
 does not create or update a public issue cluster.
+
+The consultant and intake are separate Gemini Live sessions. The consultant
+can hand off a bounded, unverified summary through the browser's same-tab
+`sessionStorage`; the envelope expires after ten minutes and is removed when
+consumed or discarded. This browser-only bridge is a demonstration convenience,
+not durable server-side state or an authentication mechanism. The intake shows
+the carried summary for review, seeds matching draft fields with review
+provenance, and supports `Start fresh` before microphone access begins.
 
 Gemini Live and ephemeral-token support are Preview features. The API key is
 read only from `GEMINI_API_KEY`; model names and temporary-session limits are

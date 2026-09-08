@@ -12,7 +12,7 @@ from services.api.app.main import app
 
 
 class FakeProvider:
-    def create_live_token(self):
+    def create_live_token(self, mode="intake"):
         from datetime import UTC, datetime, timedelta
 
         from services.ai.app.gemini_provider import LiveToken
@@ -20,10 +20,14 @@ class FakeProvider:
         now = datetime.now(UTC)
         return LiveToken(
             token="ephemeral-test-token",
-            model="test-live-model",
+            model=(
+                "test-consultant-model"
+                if mode == "consultant"
+                else "test-live-model"
+            ),
             expires_at=now + timedelta(minutes=30),
             new_session_expires_at=now + timedelta(minutes=1),
-            config={},
+            config={"mode": mode},
         )
 
     def normalize(self, request):
@@ -68,6 +72,25 @@ def test_live_token_endpoint_returns_only_short_lived_session_credentials(
     assert response.json()["token"] == "ephemeral-test-token"
     assert "api_key" not in response.text
     assert response.json()["model"] == "test-live-model"
+
+
+def test_live_token_endpoint_accepts_consultant_mode(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/intake/live-token",
+        json={"mode": "consultant"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["model"] == "test-consultant-model"
+
+
+def test_live_token_endpoint_rejects_unknown_mode(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/intake/live-token",
+        json={"mode": "unsupported"},
+    )
+
+    assert response.status_code == 422
 
 
 def test_normalize_endpoint_returns_validated_rich_draft(client: TestClient) -> None:

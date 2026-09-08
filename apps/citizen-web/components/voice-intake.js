@@ -19,6 +19,12 @@ import {
   validateIntakeReview,
 } from "../lib/intake.js";
 import {
+  buildConsultantContinuationPrompt,
+  discardConsultantHandoff,
+  getConsultantHandoffSummary,
+  seedDraftFromConsultantHandoff,
+} from "../lib/consultant-handoff.js";
+import {
   connectGeminiLive,
   buildLiveToolResponse,
   getLiveInputTranscription,
@@ -310,7 +316,7 @@ function ReviewField({ label, value, onChange, multiline = false, type = "text",
   );
 }
 
-export default function VoiceIntake({ onSubmitDraft, onUseText }) {
+export default function VoiceIntake({ onSubmitDraft, onUseText, initialHandoff = null, onDiscardHandoff }) {
   const [draft, setDraft] = useState(createInitialIntakeDraft);
   const [transcript, setTranscript] = useState("");
   const [assistantTranscript, setAssistantTranscript] = useState("");
@@ -330,6 +336,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
   const microphoneRef = useRef(null);
   const playbackContextRef = useRef(null);
   const playbackRef = useRef(initialPlayback);
+  const appliedHandoffRef = useRef(null);
   const playbackResumeTimerRef = useRef(null);
 
   function updateDraft(nextDraft, updatedPath = "") {
@@ -373,6 +380,12 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
       setError(patchError instanceof Error ? patchError.message : "That field could not be updated.");
     }
   }
+
+  useEffect(() => {
+    if (!initialHandoff || appliedHandoffRef.current === initialHandoff.createdAt) return;
+    updateDraft(seedDraftFromConsultantHandoff(createInitialIntakeDraft(), initialHandoff));
+    appliedHandoffRef.current = initialHandoff.createdAt;
+  }, [initialHandoff]);
 
   function stopResources() {
     microphoneRef.current?.stop();
@@ -491,7 +504,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
       sessionRef.current = session;
       microphoneRef.current = await startMicrophoneInput(session);
       setStatus("listening");
-      sendOpeningPrompt(session);
+      sendOpeningPrompt(session, buildConsultantContinuationPrompt(initialHandoff));
     } catch (startError) {
       stopResources();
       setStatus("error");
@@ -502,6 +515,19 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
   function stopVoice() {
     commitInterimTranscript();
     stopResources();
+    setStatus("ready");
+  }
+
+  function startFresh() {
+    stopResources();
+    updateDraft(createInitialIntakeDraft());
+    appliedHandoffRef.current = null;
+    discardConsultantHandoff();
+    onDiscardHandoff?.();
+    setError("");
+    setTranscript("");
+    setAssistantTranscript("");
+    setInterimTranscript("");
     setStatus("ready");
   }
 
@@ -654,6 +680,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
     <section className="voice-intake" aria-labelledby="voice-intake-title">
       <div className="voice-heading"><div><p className="eyebrow">Step 01 · Speak</p><h2 id="voice-intake-title">Talk it through.</h2></div><span className="voice-language"><Volume2 size={15} /> English · Hindi · Telugu · Tamil · Malayalam · Kannada · Bengali</span></div>
       <p className="voice-copy">I will ask one question at a time and build a draft for you to review. You stay in control.</p>
+      {initialHandoff && <div className="voice-handoff-notice"><div><strong>Your consultant notes are ready.</strong><p>{getConsultantHandoffSummary(initialHandoff).slice(0, 320)}</p><small>These are unverified notes. Check every detail before submitting.</small></div><button className="text-button" type="button" onClick={startFresh}>Start fresh</button></div>}
       <div className="voice-workspace">
         <div className="voice-conversation-column">
           <div className={`voice-status voice-status-${status}`} aria-live="polite">
@@ -681,7 +708,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
         </div>
         <LiveDraftPanel draft={draft} reviewFlags={getReviewFlags(draft)} onChange={updatePath} lastUpdatedPath={lastUpdatedPath} />
       </div>
-      <p className="voice-disclosure">Voice audio is sent to Google Gemini for this live session. The application does not retain your audio; your in-progress draft stays only in this browser tab.</p>
+      <p className="voice-disclosure">Voice audio is sent to Google Gemini for this live session. The application does not retain your audio or unfinished transcript. Review the temporary consultant notes before submitting.</p>
     </section>
   );
 }
