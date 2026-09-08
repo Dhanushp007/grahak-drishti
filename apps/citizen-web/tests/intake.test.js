@@ -9,6 +9,7 @@ import {
   getGuidedIntakeProgress,
   getIntakeNormalizationError,
   hasIntakeStory,
+  mergeNormalizedIntakeDraft,
   parseVoiceIntakeSession,
   serializeVoiceIntakeSession,
   validateIntakeReview,
@@ -17,8 +18,12 @@ import {
   buildLiveToolResponse,
   getLiveInputTranscription,
   getLiveOutputTranscription,
+  getLiveFunctionCalls,
   getLiveToolCalls,
   parseLiveToolCallArgs,
+  parseLiveFunctionArgs,
+  buildLiveConfig,
+  sendOpeningPrompt,
 } from "../lib/gemini-live.js";
 
 test("applies safe nested draft patches without mutating the original", () => {
@@ -192,4 +197,68 @@ test("does not treat provider failures as successful normalization", () => {
     status: "needs_review",
     draft: createInitialIntakeDraft(),
   }), "");
+});
+
+test("normalizes spoken language labels to the API language values", () => {
+  const draft = createInitialIntakeDraft();
+  const english = applyIntakePatch(draft, {
+    path: "complaint.language",
+    value: "English",
+  });
+  const hindi = applyIntakePatch(english, {
+    path: "complaint.language",
+    value: "Hindi",
+  });
+
+  assert.equal(english.complaint.language, "en");
+  assert.equal(hindi.complaint.language, "hi");
+  assert.throws(() => applyIntakePatch(draft, {
+    path: "complaint.language",
+    value: "Tamil",
+  }), /Choose English, Hindi, or Hinglish/);
+});
+
+test("supports both Live tool-call helper names and envelopes", () => {
+  const call = {
+    id: "call-1",
+    name: "patch_intake_draft",
+    args: JSON.stringify({ path: "business.company_name", value: "Example Seller" }),
+  };
+
+  assert.deepEqual(getLiveToolCalls({ server_content: { tool_call: { function_calls: [call] } } }), [call]);
+  assert.deepEqual(getLiveFunctionCalls({ toolCall: { functionCalls: [call] } }), [call]);
+  assert.deepEqual(parseLiveFunctionArgs(call), parseLiveToolCallArgs(call));
+  assert.ok(buildLiveConfig().tools[0].functionDeclarations[0].parameters.properties.path.enum.includes("business.company_name"));
+});
+
+test("starts the Live intake with an English language-choice question", () => {
+  let openingMessage;
+  sendOpeningPrompt({
+    sendClientContent(message) {
+      openingMessage = message;
+    },
+  });
+
+  const openingText = openingMessage.turns[0].parts[0].text;
+  assert.match(openingText, /^Begin in English only\./);
+  assert.match(openingText, /Which language would you prefer/);
+});
+
+test("preserves captured values when normalization returns an incomplete draft", () => {
+  const draft = createInitialIntakeDraft();
+  draft.business.company_name = "Example Seller";
+  draft.resolution_attempts = [{ channel: "seller", response_summary: "No response" }];
+  draft.consents.case_processing = true;
+
+  const normalized = createInitialIntakeDraft();
+  normalized.business.company_name = "";
+  normalized.resolution_attempts = [];
+  normalized.consents.case_processing = false;
+  normalized.incident.category = "refund";
+
+  const merged = mergeNormalizedIntakeDraft(draft, normalized);
+  assert.equal(merged.business.company_name, "Example Seller");
+  assert.deepEqual(merged.resolution_attempts, draft.resolution_attempts);
+  assert.equal(merged.consents.case_processing, true);
+  assert.equal(merged.incident.category, "refund");
 });

@@ -1,5 +1,9 @@
 export const LIVE_SYSTEM_INSTRUCTION = [
   "You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.",
+  "Start every new session in English.",
+  "Before asking anything about the complaint, ask exactly one question in English: Which language would you prefer for this conversation: English, Hindi, or Hinglish?",
+  "Wait for the consumer to answer that language question. Until they answer, speak only English and do not collect complaint details or call patch_intake_draft.",
+  "After the consumer chooses, use that language for the rest of the conversation. Record English as en, Hindi as hi, and Hinglish as hinglish in complaint.language.",
   "Speak in the language the consumer uses, including English, Hindi, and natural Hinglish code-switching.",
   "Run a guided intake rather than a free-form chat: ask exactly one short question at a time, wait for the answer, and do not move ahead by guessing.",
   "Follow this order: what happened; company, seller, marketplace, and product; order references, dates, amounts, payment, and refund; the consumer's name, tracking contact, and address; support attempts, evidence, and requested remedy; then consent.",
@@ -16,6 +20,74 @@ export const LIVE_SYSTEM_INSTRUCTION = [
   "A human must review and confirm every field before official submission.",
 ].join(" ");
 
+const PATCH_PATHS = [
+  "complaint.description",
+  "complaint.language",
+  "complaint.self_assessed_priority",
+  "consumer.consumer_type",
+  "consumer.full_name",
+  "consumer.contact.email",
+  "consumer.contact.phone",
+  "consumer.contact.preferred_method",
+  "consumer.address.line1",
+  "consumer.address.line2",
+  "consumer.address.city",
+  "consumer.address.district",
+  "consumer.address.state",
+  "consumer.address.postal_code",
+  "incident.sector",
+  "incident.category",
+  "incident.subcategory",
+  "incident.occurred_on",
+  "incident.discovered_on",
+  "incident.date_precision",
+  "incident.is_recurring",
+  "incident.urgency",
+  "incident.what_was_promised",
+  "incident.what_happened",
+  "business.company_name",
+  "business.seller_name",
+  "business.marketplace_or_channel",
+  "business.website_or_app",
+  "business.business_location",
+  "transaction.product_or_service",
+  "transaction.product_identifier",
+  "transaction.order_reference",
+  "transaction.invoice_reference",
+  "transaction.booking_or_policy_reference",
+  "transaction.transaction_date",
+  "transaction.delivery_date",
+  "transaction.cancellation_date",
+  "transaction.order_status",
+  "transaction.delivery_status",
+  "transaction.amount_paid",
+  "transaction.amount_disputed",
+  "transaction.refund_expected",
+  "transaction.refund_received",
+  "transaction.remaining_loss",
+  "transaction.payment_method",
+  "transaction.payment_reference_last_four",
+  "transaction.reference_verification_status",
+  "resolution_attempts",
+  "requested_remedy.primary",
+  "requested_remedy.amount_requested",
+  "requested_remedy.other_requests",
+  "requested_remedy.compensation_requested",
+  "escalation.previous_authorities_contacted",
+  "escalation.preferred_next_step",
+  "escalation.nch_reference",
+  "escalation.regulator_reference",
+  "escalation.e_jagriti_reference",
+  "escalation.official_escalation_requested",
+  "evidence",
+  "consents.case_processing",
+  "consents.aggregate_intelligence",
+  "consents.share_with_official_authority",
+  "data_quality.reported_by",
+  "data_quality.verification_status",
+  "data_quality.notes",
+];
+
 const PATCH_TOOL = {
   name: "patch_intake_draft",
   description: "Update one explicitly stated field in the private complaint draft.",
@@ -23,17 +95,25 @@ const PATCH_TOOL = {
     type: "OBJECT",
     properties: {
       operation: { type: "STRING", enum: ["set", "append", "remove"] },
-      path: { type: "STRING" },
+      path: { type: "STRING", enum: PATCH_PATHS },
       value: { type: "STRING", description: "The stated value. Use JSON-compatible text for lists or objects." },
     },
-    required: ["path"],
+    required: ["path", "value"],
   },
 };
 
 export function getLiveToolCalls(message) {
-  const toolCall = message?.toolCall || message?.tool_call;
-  return toolCall?.functionCalls || toolCall?.function_calls || [];
+  const toolCall = message?.toolCall
+    || message?.tool_call
+    || message?.serverContent?.toolCall
+    || message?.serverContent?.tool_call
+    || message?.server_content?.toolCall
+    || message?.server_content?.tool_call;
+  const calls = toolCall?.functionCalls || toolCall?.function_calls || [];
+  return Array.isArray(calls) ? calls : [calls];
 }
+
+export const getLiveFunctionCalls = getLiveToolCalls;
 
 export function parseLiveToolCallArgs(call) {
   const rawArgs = call?.args ?? call?.arguments ?? {};
@@ -43,6 +123,8 @@ export function parseLiveToolCallArgs(call) {
   }
   return args;
 }
+
+export const parseLiveFunctionArgs = parseLiveToolCallArgs;
 
 export function getLiveInputTranscription(message) {
   const serverContent = message?.serverContent || message?.server_content;
@@ -105,7 +187,7 @@ export function sendOpeningPrompt(session) {
   session.sendClientContent({
     turns: [{
       role: "user",
-      parts: [{ text: "Please begin the intake in a warm, concise way. Ask what happened first." }],
+      parts: [{ text: "Begin in English only. Ask exactly this first: Which language would you prefer for this conversation: English, Hindi, or Hinglish? Wait for the answer before asking what happened." }],
     }],
     turnComplete: true,
   });

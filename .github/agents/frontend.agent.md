@@ -18,7 +18,7 @@ You are the frontend engineer for GRAHAK-DRISHTI. Build calm, trustworthy interf
 
 ### 1. Audit the existing experience
 
-- Read `PRD.md` and the relevant product flow before editing.
+- Read `docs/PRD.md` and the relevant product flow before editing.
 - Inspect nearby pages, components, shared UI primitives, tokens, routes, API clients, and tests.
 - Reuse an existing pattern when it fits; document why a new abstraction is necessary.
 

@@ -6,9 +6,15 @@ from typing import Any
 from services.api.app.config import Settings, get_settings
 from services.api.app.intake_schemas import IntakeDraft, IntakeNormalizeRequest
 
-
 LIVE_SYSTEM_INSTRUCTION = """
 You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.
+Start every new session in English. Before asking anything about the complaint,
+ask exactly one question in English: Which language would you prefer for this
+conversation: English, Hindi, or Hinglish? Wait for the consumer to answer that
+language question. Until they answer, speak only English and do not collect
+complaint details or call patch_intake_draft. After the consumer chooses, use
+that language for the rest of the conversation. Record English as en, Hindi as
+hi, and Hinglish as hinglish in complaint.language.
 Speak in the language the consumer uses, including English, Hindi, and natural
 Hinglish code-switching. Run a guided intake rather than a free-form chat: ask
 exactly one short question at a time, wait for the answer, and do not move ahead
@@ -21,8 +27,9 @@ merely acknowledge a captured detail without updating the draft. If the
 consumer says "fill the Live draft", "update the draft", or similar, review
 the conversation so far and call patch_intake_draft for every fact explicitly
 stated in it before continuing. Do not invent names, dates, amounts, order
-references, contact details, legal findings, or evidence. If an optional detail is unknown, not
-applicable, or the consumer wants to skip it, leave it empty and continue. Ask
+references, contact details, legal findings, or evidence. If an optional detail
+is unknown, not applicable, or the consumer wants to skip it, leave it empty and
+continue. Ask
 address details one at a time and never require more address information than the
 consumer is comfortable sharing. After each answer, briefly confirm what was
 captured in natural language and ask only for the next missing detail. At the end,
@@ -35,6 +42,74 @@ accepted anything. A human must review and confirm every field before official
 submission.
 """.strip()
 
+PATCH_PATHS = (
+    "complaint.description",
+    "complaint.language",
+    "complaint.self_assessed_priority",
+    "consumer.consumer_type",
+    "consumer.full_name",
+    "consumer.contact.email",
+    "consumer.contact.phone",
+    "consumer.contact.preferred_method",
+    "consumer.address.line1",
+    "consumer.address.line2",
+    "consumer.address.city",
+    "consumer.address.district",
+    "consumer.address.state",
+    "consumer.address.postal_code",
+    "incident.sector",
+    "incident.category",
+    "incident.subcategory",
+    "incident.occurred_on",
+    "incident.discovered_on",
+    "incident.date_precision",
+    "incident.is_recurring",
+    "incident.urgency",
+    "incident.what_was_promised",
+    "incident.what_happened",
+    "business.company_name",
+    "business.seller_name",
+    "business.marketplace_or_channel",
+    "business.website_or_app",
+    "business.business_location",
+    "transaction.product_or_service",
+    "transaction.product_identifier",
+    "transaction.order_reference",
+    "transaction.invoice_reference",
+    "transaction.booking_or_policy_reference",
+    "transaction.transaction_date",
+    "transaction.delivery_date",
+    "transaction.cancellation_date",
+    "transaction.order_status",
+    "transaction.delivery_status",
+    "transaction.amount_paid",
+    "transaction.amount_disputed",
+    "transaction.refund_expected",
+    "transaction.refund_received",
+    "transaction.remaining_loss",
+    "transaction.payment_method",
+    "transaction.payment_reference_last_four",
+    "transaction.reference_verification_status",
+    "resolution_attempts",
+    "requested_remedy.primary",
+    "requested_remedy.amount_requested",
+    "requested_remedy.other_requests",
+    "requested_remedy.compensation_requested",
+    "escalation.previous_authorities_contacted",
+    "escalation.preferred_next_step",
+    "escalation.nch_reference",
+    "escalation.regulator_reference",
+    "escalation.e_jagriti_reference",
+    "escalation.official_escalation_requested",
+    "evidence",
+    "consents.case_processing",
+    "consents.aggregate_intelligence",
+    "consents.share_with_official_authority",
+    "data_quality.reported_by",
+    "data_quality.verification_status",
+    "data_quality.notes",
+)
+
 PATCH_TOOL_DECLARATION = {
     "name": "patch_intake_draft",
     "description": "Update one explicitly stated field in the private complaint draft.",
@@ -42,10 +117,10 @@ PATCH_TOOL_DECLARATION = {
         "type": "OBJECT",
         "properties": {
             "operation": {"type": "STRING", "enum": ["set", "append", "remove"]},
-            "path": {"type": "STRING"},
+            "path": {"type": "STRING", "enum": list(PATCH_PATHS)},
             "value": {"type": "STRING"},
         },
-        "required": ["path"],
+        "required": ["path", "value"],
     },
 }
 
@@ -135,7 +210,9 @@ class GeminiProvider:
         )
 
     def normalize(self, request: IntakeNormalizeRequest) -> NormalizedDraft:
-        if request.transcript and len(request.transcript) > self.settings.gemini_max_transcript_chars:
+        if request.transcript and len(request.transcript) > (
+            self.settings.gemini_max_transcript_chars
+        ):
             raise GeminiInvalidOutputError("transcript exceeds the configured limit")
         prompt = self._normalization_prompt(request)
         try:
@@ -166,13 +243,17 @@ class GeminiProvider:
             parsed = json.loads(response_text)
             draft = IntakeDraft.model_validate(parsed)
         except (TypeError, ValueError, json.JSONDecodeError) as exc:
-            raise GeminiInvalidOutputError("Gemini returned invalid structured intake") from exc
+            raise GeminiInvalidOutputError(
+                "Gemini returned invalid structured intake"
+            ) from exc
         return NormalizedDraft(draft=draft, model=self.settings.gemini_extraction_model)
 
     @staticmethod
     def _normalization_prompt(request: IntakeNormalizeRequest) -> str:
         draft_json = json.dumps(
-            request.draft.model_dump(mode="json"), ensure_ascii=True, separators=(",", ":")
+            request.draft.model_dump(mode="json"),
+            ensure_ascii=True,
+            separators=(",", ":"),
         )
         transcript = request.transcript or ""
         return (

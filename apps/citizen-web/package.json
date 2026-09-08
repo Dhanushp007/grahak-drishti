@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "security": "npm audit --audit-level=high",
-    "test": "node --test tests/complaint.test.js tests/intake.test.js",
+    "test": "node --test",
     "e2e": "playwright test"
   },
   "dependencies": {

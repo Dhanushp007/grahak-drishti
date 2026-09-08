@@ -11,6 +11,7 @@ import {
   getGuidedIntakeProgress,
   getIntakeNormalizationError,
   getIntakePathValue,
+  mergeNormalizedIntakeDraft,
   getReviewFlags,
   parseVoiceIntakeSession,
   serializeVoiceIntakeSession,
@@ -48,14 +49,18 @@ function persistVoiceSession(draft, transcript, interimTranscript) {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.setItem(VOICE_SESSION_STORAGE_KEY, serializeVoiceIntakeSession(draft, transcript, interimTranscript));
-  } catch {}
+  } catch {
+    return;
+  }
 }
 
 function clearPersistedVoiceSession() {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(VOICE_SESSION_STORAGE_KEY);
-  } catch {}
+  } catch {
+    return;
+  }
 }
 
 const LIVE_FIELD_SECTIONS = [
@@ -503,7 +508,8 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
       const body = await response.json().catch(() => null);
       const normalizationError = getIntakeNormalizationError(response, body);
       if (normalizationError) throw new Error(normalizationError);
-      updateDraft({ ...body.draft, provider: body.provider || "gemini", model: body.model || null });
+      const normalizedDraft = mergeNormalizedIntakeDraft(draftRef.current, body.draft);
+      updateDraft({ ...normalizedDraft, provider: body.provider || "gemini", model: body.model || null });
       setIsReviewing(true);
       setStatus("review");
     } catch (normalizeError) {

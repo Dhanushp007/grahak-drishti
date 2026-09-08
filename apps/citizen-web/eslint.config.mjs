@@ -6,7 +6,7 @@ export default defineConfig([
   globalIgnores([".next/**", "out/**", "build/**"]),
   js.configs.recommended,
   {
-    files: ["app/**/*.js", "lib/**/*.js", "components/**/*.js", "tests/**/*.js"],
+    files: ["app/**/*.js", "components/**/*.js", "lib/**/*.js", "tests/**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -19,9 +19,9 @@ export default defineConfig([
         document: "readonly",
         fetch: "readonly",
         FormData: "readonly",
+        navigator: "readonly",
         setTimeout: "readonly",
         URLSearchParams: "readonly",
-        navigator: "readonly",
         window: "readonly",
       },
     },

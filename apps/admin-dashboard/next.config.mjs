@@ -14,7 +14,10 @@ const securityHeaders = [
 ];
 
 /** @type {import('next').NextConfig} */
-const nextConfig = { poweredByHeader: false };
+const nextConfig = {
+  poweredByHeader: false,
+  allowedDevOrigins: ["127.0.0.1"],
+};
 
 nextConfig.headers = async () => [{ source: "/(.*)", headers: securityHeaders }];
 

@@ -121,6 +121,7 @@ export default function HomePage() {
         <nav className="topbar-nav" aria-label="Citizen navigation">
           <a href="/issues">Explore issues</a>
           <a href="/track">Track a report</a>
+          <a href="/government">Government view</a>
           <a className="landing-login-link" href="/login?returnTo=%2Freport">Sign in</a>
         </nav>
       </header>
@@ -376,7 +377,7 @@ export function ComplaintPage() {
           <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
             GRAHAK<span>-</span>DRISHTI
           </a>
-          <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a></nav><span className="demo-session">{demoSession?.display_name || "Demo citizen"}</span></div>
+          <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a><a href="/government">Government view</a></nav><span className="demo-session">{demoSession?.display_name || "Demo citizen"}</span></div>
         </header>
         <section className="success-panel" aria-labelledby="success-title">
           <div className="success-icon" aria-hidden="true"><Check size={28} /></div>
@@ -424,7 +425,7 @@ export function ComplaintPage() {
         <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
           GRAHAK<span>-</span>DRISHTI
         </a>
-        <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a></nav>{demoSession ? <span className="demo-session"><UserRoundCheck size={14} /> {demoSession.display_name}</span> : <button className="demo-login-button" type="button" onClick={startDemoLogin} disabled={isLoggingIn}><UserRoundCheck size={14} /> {isLoggingIn ? "Opening demo" : "Citizen demo"}</button>}</div>
+        <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a><a href="/government">Government view</a></nav>{demoSession ? <span className="demo-session"><UserRoundCheck size={14} /> {demoSession.display_name}</span> : <button className="demo-login-button" type="button" onClick={startDemoLogin} disabled={isLoggingIn}><UserRoundCheck size={14} /> {isLoggingIn ? "Opening demo" : "Citizen demo"}</button>}</div>
         {loginError && <p className="demo-login-error" role="alert">{loginError}</p>}
       </header>
 

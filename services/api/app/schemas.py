@@ -64,9 +64,15 @@ class ComplaintCreate(BaseModel):
             if not self.intake.consents.case_processing:
                 raise ValueError("rich intake requires case-processing consent")
             rich_contact = self.intake.consumer.contact
-            if self.contact.email is not None and rich_contact.email != self.contact.email:
+            if (
+                self.contact.email is not None
+                and rich_contact.email != self.contact.email
+            ):
                 raise ValueError("complaint contact must match the rich intake contact")
-            if self.contact.phone is not None and rich_contact.phone != self.contact.phone:
+            if (
+                self.contact.phone is not None
+                and rich_contact.phone != self.contact.phone
+            ):
                 raise ValueError("complaint contact must match the rich intake contact")
         return self
 

@@ -6,12 +6,23 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from services.api.app.intake_schemas import IntakeDraft, IntakePatch
+from services.api.app.intake_schemas import (
+    IntakeDraft,
+    IntakeNormalizeRequest,
+    IntakePatch,
+)
 
 
 def test_complete_synthetic_template_validates() -> None:
-    fixture_path = Path(__file__).resolve().parents[3] / "data" / "seed" / "sample-complaint-intake.json"
-    draft = IntakeDraft.model_validate(json.loads(fixture_path.read_text(encoding="utf-8")))
+    fixture_path = (
+        Path(__file__).resolve().parents[3]
+        / "data"
+        / "seed"
+        / "sample-complaint-intake.json"
+    )
+    draft = IntakeDraft.model_validate(
+        json.loads(fixture_path.read_text(encoding="utf-8"))
+    )
 
     assert draft.schema_version == "complaint-intake.v1"
     assert draft.business.company_name == "QuickKart Demo Marketplace"
@@ -54,6 +65,19 @@ def test_incomplete_draft_reports_required_fields() -> None:
         "consumer.contact",
         "consents.case_processing",
     ]
+
+
+def test_language_labels_are_normalized_to_contract_values() -> None:
+    draft = IntakeDraft.model_validate(
+        {
+            "complaint": {"language": "English"},
+            "consumer": {"contact": {"email": "consumer@example.test"}},
+        }
+    )
+    request = IntakeNormalizeRequest(draft=draft, language_hint="Hindi")
+
+    assert draft.complaint.language == "en"
+    assert request.language_hint == "hi"
 
 
 def test_patch_rejects_system_fields_and_unknown_paths() -> None:

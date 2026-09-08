@@ -1,4 +1,7 @@
-from typing import Literal
+import asyncio
+import os
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, Literal
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -11,12 +14,37 @@ from services.api.app.complaints import (
 )
 from services.api.app.dashboard_routes import router as dashboard_router
 from services.api.app.demo_routes import router as demo_router
-from services.api.app.intelligence import CorroborationNotFoundError
 from services.api.app.intake_routes import router as intake_router
+from services.api.app.intelligence import CorroborationNotFoundError
 from services.api.app.issue_routes import router as issue_router
 from services.api.app.issues import IssueNotFoundError
 from services.api.app.routes import router as complaint_router
 from services.api.app.storage import EvidenceStorageError
+
+
+async def _run_embedded_worker(stop_event: asyncio.Event) -> None:
+    from services.complaint_worker.app.worker import run_once
+
+    while not stop_event.is_set():
+        await asyncio.to_thread(run_once)
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=1.0)
+        except TimeoutError:
+            continue
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    worker_task = None
+    stop_event = asyncio.Event()
+    if os.getenv("RUN_COMPLAINT_WORKER", "false").lower() == "true":
+        worker_task = asyncio.create_task(_run_embedded_worker(stop_event))
+    try:
+        yield
+    finally:
+        if worker_task is not None:
+            stop_event.set()
+            await worker_task
 
 
 class HealthResponse(BaseModel):
@@ -29,6 +57,7 @@ app = FastAPI(
     title="GRAHAK-DRISHTI API",
     description="Consumer intelligence and escalation platform API.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 app.include_router(complaint_router)
 app.include_router(issue_router)
