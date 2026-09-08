@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, FileText, FileUp, Keyboard, LoaderCircle, Mic, Search, ShieldCheck, Sparkles, UserRoundCheck } from "lucide-react";
+import indiaMap from "@svg-maps/india";
 
 import VoiceIntake from "../components/voice-intake.js";
 import { buildComplaintPayload, readApiResponse, validateComplaintForm } from "../lib/complaint.js";
@@ -24,8 +25,22 @@ const landingSteps = [
   { number: "03", label: "Strengthen the signal", title: "Evidence makes the pattern more useful.", detail: "Corroboration helps analysts see trend, impact, geography, and a sensible next step." },
 ];
 
+const stateSignals = {
+  ap: 58, ar: 31, as: 42, br: 47, ch: 35, ct: 51, dl: 72, ga: 28, gj: 64,
+  hr: 49, hp: 27, jk: 24, jh: 39, ka: 68, kl: 54, mp: 61, mh: 86, mn: 22,
+  ml: 20, mz: 18, nl: 19, od: 45, or: 45, pb: 41, py: 26, rj: 57, sk: 12, tn: 74,
+  tg: 63, tr: 21, up: 77, ut: 34, wb: 69, an: 14, ld: 8, dn: 16, dd: 16,
+};
+
+function signalLevel(value) {
+  if (value >= 70) return "high";
+  if (value >= 45) return "medium";
+  return "low";
+}
+
 export default function HomePage() {
   const [activeLandingStep, setActiveLandingStep] = useState(0);
+  const [selectedState, setSelectedState] = useState(null);
   const landingStep = landingSteps[activeLandingStep];
 
   useEffect(() => {
@@ -34,6 +49,10 @@ export default function HomePage() {
     }, 4800);
     return () => window.clearInterval(cardTimer);
   }, []);
+
+  function selectState(stateId) {
+    setSelectedState(stateId);
+  }
 
   return (
     <main className="page-shell landing-shell">
@@ -51,11 +70,11 @@ export default function HomePage() {
 
       <section className="landing-hero" aria-labelledby="landing-title">
         <div className="landing-hero-copy">
-          <p className="eyebrow">The problem in one sentence</p>
-          <h1 id="landing-title">One refund delay can reveal a pattern.</h1>
+          <p className="eyebrow">A consumer-first starting point</p>
+          <h1 id="landing-title">Make your complaint count.</h1>
           <p className="landing-intro">
-            A refund was promised but never arrived. GRAHAK-DRISHTI turns that private
-            experience into an evidence-backed consumer signal without exposing the person behind it.
+            Start with what happened. GRAHAK-DRISHTI helps you create a private case,
+            follow its progress, and see when other consumers have faced a similar issue.
           </p>
           <div className="landing-actions">
             <a className="primary-button" href="/login?returnTo=%2Freport">
@@ -84,6 +103,32 @@ export default function HomePage() {
           </article>
           <div className="moving-card-controls" aria-label="Highlight controls">
             {landingSteps.map((step, index) => <button className={index === activeLandingStep ? "is-active" : ""} type="button" key={step.number} onClick={() => setActiveLandingStep(index)} aria-label={`Show ${step.label}`} aria-pressed={index === activeLandingStep}><span /></button>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="signal-overview" aria-labelledby="signal-overview-title">
+        <div className="signal-overview-heading">
+          <p className="eyebrow">Aggregate signals</p>
+          <h2 id="signal-overview-title">See the wider consumer picture.</h2>
+          <p>Explore relative synthetic issue signals by state. Individual complaints and contact details never appear here.</p>
+        </div>
+        <div className="signal-overview-layout">
+          <div className="signal-map-panel">
+            <div className="signal-map-toolbar"><div><strong>Consumer signals across India</strong><span>Select a state to inspect its relative signal</span></div><b>Demo data</b></div>
+            <div className="signal-map" aria-label="India map showing synthetic aggregate consumer issue signals">
+              <svg viewBox={indiaMap.viewBox}>
+                {indiaMap.locations.map((location) => {
+                  const signal = stateSignals[location.id] || 10;
+                  return <path className={`india-state signal-level-${signalLevel(signal)} ${selectedState === location.id ? "is-selected" : ""}`} d={location.path} key={location.id} tabIndex="0" role="button" aria-label={`Show ${location.name} signal`} onClick={() => selectState(location.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectState(location.id); } }} />;
+                })}
+              </svg>
+              <div className="map-legend"><span><i className="legend-low" /> Lower signal</span><span><i className="legend-high" /> Higher signal</span></div>
+            </div>
+          </div>
+          <div className="signal-summary">
+            <div className="signal-summary-lead"><span>{selectedState ? "Selected state" : "India overview"}</span><strong>{selectedState ? indiaMap.locations.find((location) => location.id === selectedState)?.name : "Patterns become visible when complaints are seen together."}</strong><p>{selectedState ? `Relative synthetic signal: ${signalLevel(stateSignals[selectedState] || 10)}.` : "The map is a visual guide to aggregate issue intensity, not official government statistics."}</p></div>
+            <a className="signal-summary-link" href="/issues">Explore public issue signals <ArrowRight size={16} /></a>
           </div>
         </div>
       </section>
