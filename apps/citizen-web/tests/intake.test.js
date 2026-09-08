@@ -269,3 +269,14 @@ test("preserves captured values when normalization returns an incomplete draft",
   assert.equal(merged.consents.case_processing, true);
   assert.equal(merged.incident.category, "refund");
 });
+
+test("does not let a malformed scalar replace a captured list", () => {
+  const draft = createInitialIntakeDraft();
+  draft.escalation.previous_authorities_contacted = ["seller support"];
+
+  const normalized = createInitialIntakeDraft();
+  normalized.escalation.previous_authorities_contacted = "consumer helpline";
+
+  const merged = mergeNormalizedIntakeDraft(draft, normalized);
+  assert.deepEqual(merged.escalation.previous_authorities_contacted, ["seller support"]);
+});
