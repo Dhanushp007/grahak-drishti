@@ -5,7 +5,11 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from services.api.app.config import Settings, get_settings
-from services.api.app.intake_schemas import IntakeDraft, IntakeNormalizeRequest
+from services.api.app.intake_schemas import (
+    IntakeDraft,
+    IntakeNormalizeRequest,
+    ProviderErrorKind,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +137,9 @@ PATCH_TOOL_DECLARATION = {
 class GeminiProviderError(Exception):
     """Base error for failures that should not expose provider details to users."""
 
-    def __init__(self, message: str, *, reason: str = "upstream_failure") -> None:
+    def __init__(
+        self, message: str, *, reason: ProviderErrorKind = "upstream_failure"
+    ) -> None:
         super().__init__(message)
         self.reason = reason
 
@@ -146,7 +152,7 @@ class GeminiInvalidOutputError(GeminiProviderError):
     pass
 
 
-def classify_provider_exception(exc: BaseException) -> str:
+def classify_provider_exception(exc: BaseException) -> ProviderErrorKind:
     code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
     code_text = str(code).lower()
     message = str(exc).lower()

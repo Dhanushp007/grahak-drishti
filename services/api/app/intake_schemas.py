@@ -290,6 +290,18 @@ class IntakeNormalizeRequest(IntakeModel):
         return value
 
 
+ProviderErrorKind = Literal[
+    "not_configured",
+    "rate_limited",
+    "not_authorized",
+    "model_unavailable",
+    "timeout",
+    "invalid_request",
+    "upstream_failure",
+    "invalid_output",
+]
+
+
 class IntakeNormalizeResponse(IntakeModel):
     status: Literal[
         "ok", "needs_review", "provider_unavailable", "invalid_provider_output"
@@ -298,16 +310,7 @@ class IntakeNormalizeResponse(IntakeModel):
     missing_required: list[str] = Field(default_factory=list)
     provider: str = "gemini"
     model: str | None = None
-    provider_error: Literal[
-        "not_configured",
-        "rate_limited",
-        "not_authorized",
-        "model_unavailable",
-        "timeout",
-        "invalid_request",
-        "upstream_failure",
-        "invalid_output",
-    ] | None = None
+    provider_error: ProviderErrorKind | None = None
 
 
 class LiveTokenResponse(IntakeModel):
