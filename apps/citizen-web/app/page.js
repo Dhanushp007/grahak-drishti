@@ -340,12 +340,8 @@ export function ComplaintPage() {
     if (Object.keys(validationErrors).length > 0) return;
     try {
       await submitPayload(buildComplaintPayload(form));
-    } catch (error) {
-      setSubmissionError(
-        error instanceof Error
-          ? error.message
-          : "We could not submit your report. Please try again.",
-      );
+    } catch {
+      return;
     }
   }
 
@@ -381,7 +377,7 @@ export function ComplaintPage() {
           <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
             GRAHAK<span>-</span>DRISHTI
           </a>
-          <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a></nav><span className="demo-session">{demoSession?.display_name || "Demo citizen"}</span></div>
+          <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a><a href="/government">Government view</a></nav><span className="demo-session">{demoSession?.display_name || "Demo citizen"}</span></div>
         </header>
         <section className="success-panel" aria-labelledby="success-title">
           <div className="success-icon" aria-hidden="true"><Check size={28} /></div>
@@ -429,11 +425,11 @@ export function ComplaintPage() {
         <a className="wordmark" href="/" aria-label="GRAHAK-DRISHTI home">
           GRAHAK<span>-</span>DRISHTI
         </a>
-        <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a></nav>{demoSession ? <span className="demo-session"><UserRoundCheck size={14} /> {demoSession.display_name}</span> : <button className="demo-login-button" type="button" onClick={startDemoLogin} disabled={isLoggingIn}><UserRoundCheck size={14} /> {isLoggingIn ? "Opening demo" : "Citizen demo"}</button>}</div>
+        <div className="topbar-actions"><nav className="topbar-nav" aria-label="Citizen navigation"><a href="/issues">Explore issues</a><a href="/reports">My reports</a><a href="/track">Track a report</a><a href="/government">Government view</a></nav>{demoSession ? <span className="demo-session"><UserRoundCheck size={14} /> {demoSession.display_name}</span> : <button className="demo-login-button" type="button" onClick={startDemoLogin} disabled={isLoggingIn}><UserRoundCheck size={14} /> {isLoggingIn ? "Opening demo" : "Citizen demo"}</button>}</div>
         {loginError && <p className="demo-login-error" role="alert">{loginError}</p>}
       </header>
 
-      <section className="hero-grid">
+      <section className={`hero-grid ${intakeMode === "voice" ? "hero-grid-voice" : ""}`}>
         <div className="hero-copy">
           <p className="eyebrow">A clearer way forward</p>
           <h1>Tell us what happened.</h1>

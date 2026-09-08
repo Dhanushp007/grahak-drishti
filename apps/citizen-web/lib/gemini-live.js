@@ -2,14 +2,21 @@ export const LIVE_SYSTEM_INSTRUCTION = [
   "You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.",
   "Start every new session in English.",
   "Before asking anything about the complaint, ask exactly one question in English: Which language would you prefer for this conversation: English, Hindi, or Hinglish?",
-  "Wait for the consumer to answer that language question. Until they answer, speak only English, even if their first message is in Hindi, and do not collect complaint details or call patch_intake_draft.",
+  "Wait for the consumer to answer that language question. Until they answer, speak only English and do not collect complaint details or call patch_intake_draft.",
   "After the consumer chooses, use that language for the rest of the conversation. Record English as en, Hindi as hi, and Hinglish as hinglish in complaint.language.",
-  "Ask one short follow-up question at a time and do not invent names, dates, amounts, order references, contact details, legal findings, or evidence.",
+  "Speak in the language the consumer uses, including English, Hindi, and natural Hinglish code-switching.",
+  "Run a guided intake rather than a free-form chat: ask exactly one short question at a time, wait for the answer, and do not move ahead by guessing.",
+  "Follow this order: what happened; company, seller, marketplace, and product; order references, dates, amounts, payment, and refund; the consumer's name, tracking contact, and address; support attempts, evidence, and requested remedy; then consent.",
+  "When one answer contains one or more details, call patch_intake_draft for every explicitly stated field before speaking; never merely acknowledge a captured detail without updating the draft.",
+  "If the consumer says fill the Live draft, update the draft, or similar, review the conversation so far and call patch_intake_draft for every fact explicitly stated in it before continuing.",
+  "Do not invent names, dates, amounts, order references, contact details, legal findings, or evidence.",
+  "If an optional detail is unknown, not applicable, or the consumer wants to skip it, leave it empty and continue.",
+  "Ask address details one at a time and never require more address information than the consumer is comfortable sharing.",
+  "After each answer, briefly confirm what was captured in natural language and ask only for the next missing detail.",
+  "At the end, summarize the captured details, invite corrections, and ask explicitly whether the consumer allows case processing; set case_processing only after an explicit yes.",
   "Treat the consumer's account as an allegation or report, not an established fact.",
-  "Whenever the consumer explicitly states or corrects a detail, immediately call patch_intake_draft before asking the next question. Use one call per field and do not wait until the end.",
-  "Use the exact field paths offered by the tool schema. For list fields, use append with a JSON-compatible value. For corrections, use set. For removals, use remove with an empty value.",
+  "Use the patch_intake_draft tool only to organize a private editable draft.",
   "Never submit a complaint, contact a seller or authority, or claim that a regulator has accepted anything.",
-  "Prioritize a description, one tracking contact, and case-processing consent, then ask about useful optional details.",
   "A human must review and confirm every field before official submission.",
 ].join(" ");
 
@@ -95,6 +102,53 @@ const PATCH_TOOL = {
   },
 };
 
+export function getLiveToolCalls(message) {
+  const toolCall = message?.toolCall
+    || message?.tool_call
+    || message?.serverContent?.toolCall
+    || message?.serverContent?.tool_call
+    || message?.server_content?.toolCall
+    || message?.server_content?.tool_call;
+  const calls = toolCall?.functionCalls || toolCall?.function_calls || [];
+  return Array.isArray(calls) ? calls : [calls];
+}
+
+export const getLiveFunctionCalls = getLiveToolCalls;
+
+export function parseLiveToolCallArgs(call) {
+  const rawArgs = call?.args ?? call?.arguments ?? {};
+  const args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+  if (!args || typeof args !== "object" || Array.isArray(args)) {
+    throw new Error("The voice assistant returned invalid draft arguments.");
+  }
+  return args;
+}
+
+export const parseLiveFunctionArgs = parseLiveToolCallArgs;
+
+export function getLiveInputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.inputTranscription || serverContent?.input_transcription;
+}
+
+export function getLiveInterimInputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.interimInputTranscription || serverContent?.interim_input_transcription;
+}
+
+export function getLiveOutputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.outputTranscription || serverContent?.output_transcription;
+}
+
+export function buildLiveToolResponse(call, response) {
+  return {
+    id: call?.id,
+    name: call?.name || "patch_intake_draft",
+    response,
+  };
+}
+
 export function buildLiveConfig() {
   return {
     responseModalities: ["AUDIO"],
@@ -133,9 +187,7 @@ export function sendOpeningPrompt(session) {
   session.sendClientContent({
     turns: [{
       role: "user",
-      parts: [{
-        text: "Begin in English only. Ask exactly this first: Which language would you prefer for this conversation: English, Hindi, or Hinglish? Wait for the answer before asking what happened.",
-      }],
+      parts: [{ text: "Begin in English only. Ask exactly this first: Which language would you prefer for this conversation: English, Hindi, or Hinglish? Wait for the answer before asking what happened." }],
     }],
     turnComplete: true,
   });
@@ -146,23 +198,6 @@ export function sendTextMessage(session, text) {
     turns: [{ role: "user", parts: [{ text }] }],
     turnComplete: true,
   });
-}
-
-export function getLiveFunctionCalls(message) {
-  const toolCall = message?.toolCall
-    || message?.tool_call
-    || message?.serverContent?.toolCall
-    || message?.serverContent?.tool_call
-    || message?.server_content?.toolCall
-    || message?.server_content?.tool_call;
-  const calls = toolCall?.functionCalls || toolCall?.function_calls || [];
-  return Array.isArray(calls) ? calls : [calls];
-}
-
-export function parseLiveFunctionArgs(call) {
-  const rawArgs = call?.args ?? call?.arguments ?? {};
-  if (typeof rawArgs === "string") return JSON.parse(rawArgs);
-  return rawArgs || {};
 }
 
 function downsampleToPcm16(samples, inputRate, targetRate = 16000) {

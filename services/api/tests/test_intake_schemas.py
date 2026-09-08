@@ -57,22 +57,6 @@ def test_rich_fixture_shape_can_be_loaded_without_exposing_unknown_fields() -> N
     assert draft.missing_required_fields() == []
 
 
-def test_language_labels_are_normalized_to_contract_values() -> None:
-    draft = IntakeDraft.model_validate(
-        {
-            "complaint": {"language": "English"},
-            "consumer": {"contact": {"email": "consumer@example.test"}},
-        }
-    )
-    request = IntakeNormalizeRequest(
-        draft=draft,
-        language_hint="Hindi",
-    )
-
-    assert draft.complaint.language == "en"
-    assert request.language_hint == "hi"
-
-
 def test_incomplete_draft_reports_required_fields() -> None:
     draft = IntakeDraft()
 
@@ -81,6 +65,19 @@ def test_incomplete_draft_reports_required_fields() -> None:
         "consumer.contact",
         "consents.case_processing",
     ]
+
+
+def test_language_labels_are_normalized_to_contract_values() -> None:
+    draft = IntakeDraft.model_validate(
+        {
+            "complaint": {"language": "English"},
+            "consumer": {"contact": {"email": "consumer@example.test"}},
+        }
+    )
+    request = IntakeNormalizeRequest(draft=draft, language_hint="Hindi")
+
+    assert draft.complaint.language == "en"
+    assert request.language_hint == "hi"
 
 
 def test_patch_rejects_system_fields_and_unknown_paths() -> None:

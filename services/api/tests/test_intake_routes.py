@@ -85,3 +85,22 @@ def test_normalize_endpoint_returns_validated_rich_draft(client: TestClient) -> 
     assert body["status"] == "ok"
     assert body["draft"]["complaint"]["description"] == "Refund is delayed."
     assert body["model"] == "test-extraction-model"
+
+
+def test_normalize_endpoint_exposes_provider_failure_status(client: TestClient) -> None:
+    from services.ai.app.gemini_provider import GeminiNotConfiguredError
+
+    class UnavailableProvider:
+        def normalize(self, request):
+            raise GeminiNotConfiguredError("missing test provider")
+
+    app.dependency_overrides[provider_dependency] = lambda: UnavailableProvider()
+    response = client.post(
+        "/api/v1/intake/normalize",
+        json={"draft": {}, "transcript": "My refund is delayed."},
+    )
+
+    assert response.status_code == 503
+    body = response.json()
+    assert body["status"] == "provider_unavailable"
+    assert body["draft"]["complaint"]["description"] is None
