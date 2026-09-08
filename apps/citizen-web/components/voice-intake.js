@@ -507,7 +507,17 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
       });
       const body = await response.json().catch(() => null);
       const normalizationError = getIntakeNormalizationError(response, body);
-      if (normalizationError) throw new Error(normalizationError);
+      if (normalizationError) {
+        if (body?.draft && ["provider_unavailable", "invalid_provider_output"].includes(body.status)) {
+          const capturedDraft = mergeNormalizedIntakeDraft(draftRef.current, body.draft);
+          updateDraft({ ...capturedDraft, provider: body.provider || null, model: body.model || null });
+          setError(`${normalizationError} You can review the captured fields below.`);
+          setIsReviewing(true);
+          setStatus("review");
+          return;
+        }
+        throw new Error(normalizationError);
+      }
       const normalizedDraft = mergeNormalizedIntakeDraft(draftRef.current, body.draft);
       updateDraft({ ...normalizedDraft, provider: body.provider || "gemini", model: body.model || null });
       setIsReviewing(true);
@@ -564,6 +574,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
           <button className="text-button voice-back-button" type="button" onClick={() => setIsReviewing(false)}><RotateCcw size={15} /> Back to conversation</button>
         </div>
         <p className="voice-copy">This draft is private until you submit it. Edit anything that is wrong or unknown.</p>
+        {error && <div className="review-notice" role="status"><CircleAlert size={18} /><span>{error}</span></div>}
         {reviewFlags.length > 0 && <div className="review-notice" role="status"><CircleAlert size={18} /><span>Please verify: {reviewFlags.map(formatIntakePath).join(", ")}.</span></div>}
         <form className="intake-review-form" onSubmit={submitReviewedDraft} noValidate>
           <fieldset className="review-section"><legend>What happened</legend>
@@ -617,7 +628,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
 
   return (
     <section className="voice-intake" aria-labelledby="voice-intake-title">
-      <div className="voice-heading"><div><p className="eyebrow">Step 01 · Speak</p><h2 id="voice-intake-title">Talk it through.</h2></div><span className="voice-language"><Volume2 size={15} /> English · Hindi · Hinglish</span></div>
+      <div className="voice-heading"><div><p className="eyebrow">Step 01 · Speak</p><h2 id="voice-intake-title">Talk it through.</h2></div><span className="voice-language"><Volume2 size={15} /> English · Hindi · Telugu · Tamil · Malayalam · Kannada · Bengali</span></div>
       <p className="voice-copy">I will ask one question at a time and build a draft for you to review. You stay in control.</p>
       <div className="voice-workspace">
         <div className="voice-conversation-column">

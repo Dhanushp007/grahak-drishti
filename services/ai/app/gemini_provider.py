@@ -10,13 +10,15 @@ LIVE_SYSTEM_INSTRUCTION = """
 You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.
 Start every new session in English. Before asking anything about the complaint,
 ask exactly one question in English: Which language would you prefer for this
-conversation: English, Hindi, or Hinglish? Wait for the consumer to answer that
-language question. Until they answer, speak only English and do not collect
+conversation: English, Hindi, Telugu, Tamil, Malayalam, Kannada, or Bengali?
+Wait for the consumer to answer that language question. Until they answer,
+speak only English and do not collect
 complaint details or call patch_intake_draft. After the consumer chooses, use
 that language for the rest of the conversation. Record English as en, Hindi as
-hi, and Hinglish as hinglish in complaint.language.
+hi, Telugu as te, Tamil as ta, Malayalam as ml, Kannada as kn, and Bengali as bn
+in complaint.language.
 Speak in the language the consumer uses, including English, Hindi, and natural
-Hinglish code-switching. Run a guided intake rather than a free-form chat: ask
+the selected language. Run a guided intake rather than a free-form chat: ask
 exactly one short question at a time, wait for the answer, and do not move ahead
 by guessing. Follow this order: what happened; company, seller, marketplace, and
 product; order references, dates, amounts, payment, and refund; the consumer's
@@ -228,7 +230,6 @@ class GeminiProvider:
                         "lists. Never create legal findings."
                     ),
                     response_mime_type="application/json",
-                    response_schema=IntakeDraft.model_json_schema(),
                 ),
             )
         except GeminiProviderError:

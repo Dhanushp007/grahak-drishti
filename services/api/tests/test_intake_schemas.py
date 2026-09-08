@@ -74,10 +74,21 @@ def test_language_labels_are_normalized_to_contract_values() -> None:
             "consumer": {"contact": {"email": "consumer@example.test"}},
         }
     )
-    request = IntakeNormalizeRequest(draft=draft, language_hint="Hindi")
+    request = IntakeNormalizeRequest(draft=draft, language_hint="Bengali")
 
     assert draft.complaint.language == "en"
-    assert request.language_hint == "hi"
+    assert request.language_hint == "bn"
+
+    for label, value in {
+        "Hindi": "hi",
+        "Telugu": "te",
+        "Tamil": "ta",
+        "Malayalam": "ml",
+        "Kannada": "kn",
+        "Bengali": "bn",
+    }.items():
+        request = IntakeNormalizeRequest(draft=draft, language_hint=label)
+        assert request.language_hint == value
 
 
 def test_patch_rejects_system_fields_and_unknown_paths() -> None:

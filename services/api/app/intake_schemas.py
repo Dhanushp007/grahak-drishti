@@ -23,7 +23,7 @@ class FieldProvenance(IntakeModel):
 class IntakeComplaint(IntakeModel):
     docket_number: str | None = Field(default=None, max_length=24)
     description: str | None = Field(default=None, max_length=5000)
-    language: Literal["en", "hi", "hinglish", "auto"] | None = None
+    language: Literal["en", "hi", "te", "ta", "ml", "kn", "bn", "auto"] | None = None
     source_channel: Literal["voice", "web", "text"] = "voice"
     submitted_at: datetime | None = None
     self_assessed_priority: str | None = Field(default=None, max_length=32)
@@ -38,7 +38,17 @@ class IntakeComplaint(IntakeModel):
             "en": "en",
             "hindi": "hi",
             "hi": "hi",
-            "hinglish": "hinglish",
+            "telugu": "te",
+            "te": "te",
+            "tamil": "ta",
+            "ta": "ta",
+            "malayalam": "ml",
+            "ml": "ml",
+            "kannada": "kn",
+            "kn": "kn",
+            "bengali": "bn",
+            "bangla": "bn",
+            "bn": "bn",
             "auto": "auto",
         }
         if isinstance(value, str):
@@ -252,7 +262,7 @@ class IntakePatch(IntakeModel):
 class IntakeNormalizeRequest(IntakeModel):
     draft: IntakeDraft
     transcript: str | None = Field(default=None, max_length=30000)
-    language_hint: Literal["auto", "en", "hi", "hinglish"] = "auto"
+    language_hint: Literal["auto", "en", "hi", "te", "ta", "ml", "kn", "bn"] = "auto"
 
     @field_validator("language_hint", mode="before")
     @classmethod
@@ -262,7 +272,17 @@ class IntakeNormalizeRequest(IntakeModel):
             "en": "en",
             "hindi": "hi",
             "hi": "hi",
-            "hinglish": "hinglish",
+            "telugu": "te",
+            "te": "te",
+            "tamil": "ta",
+            "ta": "ta",
+            "malayalam": "ml",
+            "ml": "ml",
+            "kannada": "kn",
+            "kn": "kn",
+            "bengali": "bn",
+            "bangla": "bn",
+            "bn": "bn",
             "auto": "auto",
         }
         if isinstance(value, str):
