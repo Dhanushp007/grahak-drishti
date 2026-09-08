@@ -6,10 +6,11 @@ DEFAULT_DATABASE_URL = (
 )
 DEFAULT_CONTACT_HASH_SECRET = "local-development-contact-hash-secret"
 DEFAULT_GEMINI_LIVE_MODEL = "gemini-3.1-flash-live-preview"
-DEFAULT_GEMINI_EXTRACTION_MODEL = "gemini-3.8-flash"
+DEFAULT_GEMINI_EXTRACTION_MODEL = "gemini-2.5-flash"
 DEFAULT_GEMINI_TOKEN_TTL_SECONDS = 1800
 DEFAULT_GEMINI_SESSION_TTL_SECONDS = 60
 DEFAULT_GEMINI_MAX_TRANSCRIPT_CHARS = 30000
+DEFAULT_GEMINI_REQUEST_TIMEOUT_MS = 15000
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,6 +23,7 @@ class Settings:
     gemini_token_ttl_seconds: int
     gemini_session_ttl_seconds: int
     gemini_max_transcript_chars: int
+    gemini_request_timeout_ms: int
 
 
 def get_settings() -> Settings:
@@ -50,6 +52,11 @@ def get_settings() -> Settings:
         gemini_max_transcript_chars=int(
             os.getenv(
                 "GEMINI_MAX_TRANSCRIPT_CHARS", DEFAULT_GEMINI_MAX_TRANSCRIPT_CHARS
+            )
+        ),
+        gemini_request_timeout_ms=int(
+            os.getenv(
+                "GEMINI_REQUEST_TIMEOUT_MS", DEFAULT_GEMINI_REQUEST_TIMEOUT_MS
             )
         ),
     )

@@ -23,10 +23,37 @@ class FieldProvenance(IntakeModel):
 class IntakeComplaint(IntakeModel):
     docket_number: str | None = Field(default=None, max_length=24)
     description: str | None = Field(default=None, max_length=5000)
-    language: Literal["en", "hi", "hinglish", "auto"] | None = None
+    language: Literal["en", "hi", "te", "ta", "ml", "kn", "bn", "auto"] | None = None
     source_channel: Literal["voice", "web", "text"] = "voice"
     submitted_at: datetime | None = None
     self_assessed_priority: str | None = Field(default=None, max_length=32)
+
+    @field_validator("language", mode="before")
+    @classmethod
+    def normalize_language(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        aliases = {
+            "english": "en",
+            "en": "en",
+            "hindi": "hi",
+            "hi": "hi",
+            "telugu": "te",
+            "te": "te",
+            "tamil": "ta",
+            "ta": "ta",
+            "malayalam": "ml",
+            "ml": "ml",
+            "kannada": "kn",
+            "kn": "kn",
+            "bengali": "bn",
+            "bangla": "bn",
+            "bn": "bn",
+            "auto": "auto",
+        }
+        if isinstance(value, str):
+            return aliases.get(value.strip().lower(), value)
+        return value
 
 
 class IntakeContact(IntakeModel):
@@ -235,7 +262,44 @@ class IntakePatch(IntakeModel):
 class IntakeNormalizeRequest(IntakeModel):
     draft: IntakeDraft
     transcript: str | None = Field(default=None, max_length=30000)
-    language_hint: Literal["auto", "en", "hi", "hinglish"] = "auto"
+    language_hint: Literal["auto", "en", "hi", "te", "ta", "ml", "kn", "bn"] = "auto"
+
+    @field_validator("language_hint", mode="before")
+    @classmethod
+    def normalize_language_hint(cls, value: str) -> str:
+        aliases = {
+            "english": "en",
+            "en": "en",
+            "hindi": "hi",
+            "hi": "hi",
+            "telugu": "te",
+            "te": "te",
+            "tamil": "ta",
+            "ta": "ta",
+            "malayalam": "ml",
+            "ml": "ml",
+            "kannada": "kn",
+            "kn": "kn",
+            "bengali": "bn",
+            "bangla": "bn",
+            "bn": "bn",
+            "auto": "auto",
+        }
+        if isinstance(value, str):
+            return aliases.get(value.strip().lower(), value)
+        return value
+
+
+ProviderErrorKind = Literal[
+    "not_configured",
+    "rate_limited",
+    "not_authorized",
+    "model_unavailable",
+    "timeout",
+    "invalid_request",
+    "upstream_failure",
+    "invalid_output",
+]
 
 
 class IntakeNormalizeResponse(IntakeModel):
@@ -246,6 +310,7 @@ class IntakeNormalizeResponse(IntakeModel):
     missing_required: list[str] = Field(default_factory=list)
     provider: str = "gemini"
     model: str | None = None
+    provider_error: ProviderErrorKind | None = None
 
 
 class LiveTokenRequest(IntakeModel):

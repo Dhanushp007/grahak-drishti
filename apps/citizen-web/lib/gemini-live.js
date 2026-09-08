@@ -1,11 +1,22 @@
 export const LIVE_SYSTEM_INSTRUCTION = [
   "You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.",
-  "Speak in the language the consumer uses, including English, Hindi, and natural Hinglish code-switching.",
-  "Ask one short follow-up question at a time and do not invent names, dates, amounts, order references, contact details, legal findings, or evidence.",
+  "Start every new session in English.",
+  "Before asking anything about the complaint, ask exactly one question in English: Which language would you prefer for this conversation: English, Hindi, Telugu, Tamil, Malayalam, Kannada, or Bengali?",
+  "Wait for the consumer to answer that language question. Until they answer, speak only English and do not collect complaint details or call patch_intake_draft.",
+  "After the consumer chooses, use that language for the rest of the conversation. Record English as en, Hindi as hi, Telugu as te, Tamil as ta, Malayalam as ml, Kannada as kn, and Bengali as bn in complaint.language.",
+  "Speak naturally in the language the consumer selected.",
+  "Run a guided intake rather than a free-form chat: ask exactly one short question at a time, wait for the answer, and do not move ahead by guessing.",
+  "Follow this order: what happened; company, seller, marketplace, and product; order references, dates, amounts, payment, and refund; the consumer's name, tracking contact, and address; support attempts, evidence, and requested remedy; then consent.",
+  "When one answer contains one or more details, call patch_intake_draft for every explicitly stated field before speaking; never merely acknowledge a captured detail without updating the draft.",
+  "If the consumer says fill the Live draft, update the draft, or similar, review the conversation so far and call patch_intake_draft for every fact explicitly stated in it before continuing.",
+  "Do not invent names, dates, amounts, order references, contact details, legal findings, or evidence.",
+  "If an optional detail is unknown, not applicable, or the consumer wants to skip it, leave it empty and continue.",
+  "Ask address details one at a time and never require more address information than the consumer is comfortable sharing.",
+  "After each answer, briefly confirm what was captured in natural language and ask only for the next missing detail.",
+  "At the end, summarize the captured details, invite corrections, and ask explicitly whether the consumer allows case processing; set case_processing only after an explicit yes.",
   "Treat the consumer's account as an allegation or report, not an established fact.",
   "Use the patch_intake_draft tool only to organize a private editable draft.",
   "Never submit a complaint, contact a seller or authority, or claim that a regulator has accepted anything.",
-  "Prioritize a description, one tracking contact, and case-processing consent, then ask about useful optional details.",
   "A human must review and confirm every field before official submission.",
 ].join(" ");
 
@@ -35,6 +46,74 @@ export const CONSULTANT_SYSTEM_INSTRUCTION = [
 
 export const CONSULTANT_OPENING_PROMPT = "Introduce yourself as the GRAHAK-DRISHTI AI Consultant, welcome the consumer briefly, explain that you can help them think through what happened and the next sensible step, then ask what happened. Do not request personal identifiers.";
 
+const PATCH_PATHS = [
+  "complaint.description",
+  "complaint.language",
+  "complaint.self_assessed_priority",
+  "consumer.consumer_type",
+  "consumer.full_name",
+  "consumer.contact.email",
+  "consumer.contact.phone",
+  "consumer.contact.preferred_method",
+  "consumer.address.line1",
+  "consumer.address.line2",
+  "consumer.address.city",
+  "consumer.address.district",
+  "consumer.address.state",
+  "consumer.address.postal_code",
+  "incident.sector",
+  "incident.category",
+  "incident.subcategory",
+  "incident.occurred_on",
+  "incident.discovered_on",
+  "incident.date_precision",
+  "incident.is_recurring",
+  "incident.urgency",
+  "incident.what_was_promised",
+  "incident.what_happened",
+  "business.company_name",
+  "business.seller_name",
+  "business.marketplace_or_channel",
+  "business.website_or_app",
+  "business.business_location",
+  "transaction.product_or_service",
+  "transaction.product_identifier",
+  "transaction.order_reference",
+  "transaction.invoice_reference",
+  "transaction.booking_or_policy_reference",
+  "transaction.transaction_date",
+  "transaction.delivery_date",
+  "transaction.cancellation_date",
+  "transaction.order_status",
+  "transaction.delivery_status",
+  "transaction.amount_paid",
+  "transaction.amount_disputed",
+  "transaction.refund_expected",
+  "transaction.refund_received",
+  "transaction.remaining_loss",
+  "transaction.payment_method",
+  "transaction.payment_reference_last_four",
+  "transaction.reference_verification_status",
+  "resolution_attempts",
+  "requested_remedy.primary",
+  "requested_remedy.amount_requested",
+  "requested_remedy.other_requests",
+  "requested_remedy.compensation_requested",
+  "escalation.previous_authorities_contacted",
+  "escalation.preferred_next_step",
+  "escalation.nch_reference",
+  "escalation.regulator_reference",
+  "escalation.e_jagriti_reference",
+  "escalation.official_escalation_requested",
+  "evidence",
+  "consents.case_processing",
+  "consents.aggregate_intelligence",
+  "consents.share_with_official_authority",
+  "data_quality.reported_by",
+  "data_quality.verification_status",
+  "data_quality.notes",
+];
+
 const PATCH_TOOL = {
   name: "patch_intake_draft",
   description: "Update one explicitly stated field in the private complaint draft.",
@@ -42,12 +121,59 @@ const PATCH_TOOL = {
     type: "OBJECT",
     properties: {
       operation: { type: "STRING", enum: ["set", "append", "remove"] },
-      path: { type: "STRING" },
+      path: { type: "STRING", enum: PATCH_PATHS },
       value: { type: "STRING", description: "The stated value. Use JSON-compatible text for lists or objects." },
     },
-    required: ["path"],
+    required: ["path", "value"],
   },
 };
+
+export function getLiveToolCalls(message) {
+  const toolCall = message?.toolCall
+    || message?.tool_call
+    || message?.serverContent?.toolCall
+    || message?.serverContent?.tool_call
+    || message?.server_content?.toolCall
+    || message?.server_content?.tool_call;
+  const calls = toolCall?.functionCalls || toolCall?.function_calls || [];
+  return Array.isArray(calls) ? calls : [calls];
+}
+
+export const getLiveFunctionCalls = getLiveToolCalls;
+
+export function parseLiveToolCallArgs(call) {
+  const rawArgs = call?.args ?? call?.arguments ?? {};
+  const args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+  if (!args || typeof args !== "object" || Array.isArray(args)) {
+    throw new Error("The voice assistant returned invalid draft arguments.");
+  }
+  return args;
+}
+
+export const parseLiveFunctionArgs = parseLiveToolCallArgs;
+
+export function getLiveInputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.inputTranscription || serverContent?.input_transcription;
+}
+
+export function getLiveInterimInputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.interimInputTranscription || serverContent?.interim_input_transcription;
+}
+
+export function getLiveOutputTranscription(message) {
+  const serverContent = message?.serverContent || message?.server_content;
+  return serverContent?.outputTranscription || serverContent?.output_transcription;
+}
+
+export function buildLiveToolResponse(call, response) {
+  return {
+    id: call?.id,
+    name: call?.name || "patch_intake_draft",
+    response,
+  };
+}
 
 export function buildLiveConfig() {
   return {
@@ -92,7 +218,7 @@ export async function connectGeminiLive({ token, model, config: requestedConfig,
   return ai.live.connect({ model, config, callbacks });
 }
 
-export function sendOpeningPrompt(session, text = "Please begin the intake in a warm, concise way. Ask what happened first.") {
+export function sendOpeningPrompt(session, text = "Begin in English only. Ask exactly this first: Which language would you prefer for this conversation: English, Hindi, Telugu, Tamil, Malayalam, Kannada, or Bengali? Wait for the answer before asking what happened.") {
   session.sendClientContent({
     turns: [{
       role: "user",
@@ -138,24 +264,47 @@ export function pcmFloat32ToBase64(samples, inputRate) {
   return btoa(binary);
 }
 
+function pcmInt16ToBase64(samples) {
+  const bytes = new Uint8Array(samples.buffer, samples.byteOffset, samples.byteLength);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
 export async function startMicrophoneInput(session) {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error("This browser cannot access a microphone. You can continue by typing instead.");
   }
+  if (!window.AudioWorkletNode) {
+    throw new Error("This browser cannot run the low-latency microphone processor. You can type instead.");
+  }
   const mediaStream = await navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+    audio: {
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: false,
+    },
   });
-  const audioContext = new AudioContext();
+  const audioContext = new AudioContext({ latencyHint: "interactive" });
   await audioContext.resume();
+  await audioContext.audioWorklet.addModule("/audio-capture-worklet.js");
   const source = audioContext.createMediaStreamSource(mediaStream);
-  const processor = audioContext.createScriptProcessor(4096, 1, 1);
+  const processor = new AudioWorkletNode(audioContext, "gd-microphone-capture", {
+    numberOfInputs: 1,
+    numberOfOutputs: 1,
+    outputChannelCount: [1],
+    processorOptions: { targetRate: 16000 },
+  });
   const silentGain = audioContext.createGain();
+  const captureState = { muted: false };
   silentGain.gain.value = 0;
-  processor.onaudioprocess = (event) => {
-    const samples = event.inputBuffer.getChannelData(0);
+  processor.port.onmessage = (event) => {
+    if (captureState.muted) return;
+    const samples = new Int16Array(event.data);
     session.sendRealtimeInput({
       audio: {
-        data: pcmFloat32ToBase64(samples, audioContext.sampleRate),
+        data: pcmInt16ToBase64(samples),
         mimeType: "audio/pcm;rate=16000",
       },
     });
@@ -164,8 +313,13 @@ export async function startMicrophoneInput(session) {
   processor.connect(silentGain);
   silentGain.connect(audioContext.destination);
   return {
+    setMuted(muted) {
+      captureState.muted = Boolean(muted);
+      processor.port.postMessage({ type: "mute", muted: captureState.muted });
+    },
     stop() {
-      processor.onaudioprocess = null;
+      processor.port.onmessage = null;
+      processor.port.postMessage({ type: "mute", muted: true });
       source.disconnect();
       processor.disconnect();
       silentGain.disconnect();
@@ -192,7 +346,24 @@ export function playPcmAudioChunk(audioContext, base64Audio, playback) {
   const source = audioContext.createBufferSource();
   source.buffer = buffer;
   source.connect(audioContext.destination);
-  const startAt = Math.max(audioContext.currentTime, playback.nextStartTime);
+  playback.sources ||= new Set();
+  playback.sources.add(source);
+  source.addEventListener("ended", () => playback.sources.delete(source), { once: true });
+  const startAt = Math.max(audioContext.currentTime + 0.015, playback.nextStartTime);
   source.start(startAt);
   playback.nextStartTime = startAt + buffer.duration;
+  return playback.nextStartTime;
+}
+
+export function stopPcmAudio(audioContext, playback) {
+  for (const source of playback.sources || []) {
+    try {
+      source.stop();
+    } catch {
+      // A source that already ended cannot be stopped again.
+    }
+    source.disconnect();
+  }
+  playback.sources?.clear();
+  playback.nextStartTime = audioContext?.currentTime || 0;
 }
