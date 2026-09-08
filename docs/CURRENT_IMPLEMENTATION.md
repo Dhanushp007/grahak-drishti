@@ -78,7 +78,9 @@ Routes:
 
 | Route | Purpose | Implementation |
 | --- | --- | --- |
-| `/` | Complaint intake and citizen demo login | `app/page.js` |
+| `/` | Citizen landing page and entry points | `app/page.js` |
+| `/consultant` | Interactive AI Consultant for first-step grievance guidance | `app/consultant/page.js` and `components/ai-consultant.js` |
+| `/report` | Complaint intake and citizen demo login | `app/report/page.js` and `app/page.js` |
 | `/track` | Private complaint tracking | `app/track/page.js` |
 | `/issues` | Public aggregate issue list | `app/issues/page.js` |
 | `/issues/[slug]` | Public aggregate issue detail and corroboration | `app/issues/[slug]/page.js` |
@@ -115,6 +117,16 @@ Client API modules:
 - `lib/complaint.js`: validation and normalized complaint/tracking payloads.
 - `lib/demo.js`: citizen demo login request.
 - `lib/issues.js`: public issue reads, corroboration, metadata evidence, and upload requests.
+
+AI Consultant behavior:
+
+- The landing page opens `/consultant` in a new tab so the consumer can keep the starting page available.
+- The consultant supports typed messages and the existing Gemini Live voice/audio path.
+- Its short-lived Live token is requested with `mode=consultant`, which uses a separate advisory system instruction and no complaint-draft mutation tool.
+- It can recommend that a grievance pathway may be worth pursuing, that more information is needed, or that direct resolution may be preferable. The recommendation must explain uncertainty and is not a legal finding.
+- Guardrails reject system-prompt disclosure, secret extraction, prompt-injection instructions, fabricated or retaliatory complaints, guessed legal citations, and unsupported certainty. High-risk situations such as immediate danger, medical emergency, active fraud, or account compromise are directed to the relevant emergency or official support channel first.
+- Typed messages are capped at 4,000 characters before they are sent to the Live session.
+- The conversation does not submit a complaint, contact a seller or authority, or expose individual consumer data. The consumer must review and start a private case separately.
 
 ### 3.2 Admin dashboard
 
@@ -174,6 +186,7 @@ Demo login is intentionally lightweight. It returns a role/display name and synt
 | `POST` | `/api/v1/complaints` | Creates a private complaint and returns a docket |
 | `POST` | `/api/v1/complaints/track` | Tracks a complaint using docket plus matching contact |
 | `POST` | `/api/v1/complaints/intelligence` | Returns advisory analysis or `202` while processing |
+| `POST` | `/api/v1/intake/live-token` | Issues a short-lived constrained Gemini Live session for intake or consultant mode |
 
 Request validation:
 

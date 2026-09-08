@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Building2, CarFront, Check, CircleDollarSign, Droplets, FileText, FileUp, HeartPulse, House, Keyboard, Landmark, LoaderCircle, Mic, PackageSearch, Search, ShieldCheck, UserRoundCheck, Wifi } from "lucide-react";
+import { ArrowRight, Building2, CarFront, Check, CircleDollarSign, Droplets, FileText, FileUp, HeartPulse, House, Keyboard, Landmark, LoaderCircle, Mic, PackageSearch, Search, ShieldCheck, Sparkles, UserRoundCheck, Wifi } from "lucide-react";
 import indiaMap from "@svg-maps/india";
 
 import VoiceIntake from "../components/voice-intake.js";
@@ -137,6 +137,9 @@ export default function HomePage() {
           <div className="landing-actions">
             <a className="primary-button" href="/login?returnTo=%2Freport">
               File a case <ArrowRight size={18} />
+            </a>
+            <a className="consultant-action" href="/consultant" target="_blank" rel="noopener noreferrer">
+              <Sparkles size={17} /> AI Consultant
             </a>
             <a className="landing-secondary-action" href="/track">
               Track a report <Search size={17} />
