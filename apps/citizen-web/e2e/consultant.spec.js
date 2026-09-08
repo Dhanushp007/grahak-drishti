@@ -47,7 +47,7 @@ test("continues a consultant handoff through login into Speak intake", async ({ 
   await expect(page).toHaveURL(/\/report\?intakeMode=voice$/);
   await expect(page.getByRole("tab", { name: "Speak" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText("Your consultant notes are ready.")).toBeVisible();
-  await expect(page.getByText("The refund has not arrived after cancellation.")).toBeVisible();
+  await expect(page.locator(".voice-handoff-notice").getByText("The refund has not arrived after cancellation.")).toBeVisible();
 
   await page.getByRole("button", { name: "Start fresh" }).click();
   await expect(page.getByText("Your consultant notes are ready.")).toHaveCount(0);
