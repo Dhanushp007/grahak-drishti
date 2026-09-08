@@ -13,6 +13,9 @@ from services.api.app.intake_schemas import (
 
 logger = logging.getLogger(__name__)
 
+GEMINI_RETRY_ATTEMPTS = 3
+GEMINI_RETRY_STATUS_CODES = (408, 429, 500, 502, 503, 504)
+
 LIVE_SYSTEM_INSTRUCTION = """
 You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.
 Start every new session in English. Before asking anything about the complaint,
@@ -222,7 +225,10 @@ class GeminiProvider:
             api_key=self.settings.gemini_api_key,
             http_options=types.HttpOptions(
                 timeout=self.settings.gemini_request_timeout_ms,
-                retry_options=types.HttpRetryOptions(attempts=1),
+                retry_options=types.HttpRetryOptions(
+                    attempts=GEMINI_RETRY_ATTEMPTS,
+                    http_status_codes=list(GEMINI_RETRY_STATUS_CODES),
+                ),
             ),
         )
 
