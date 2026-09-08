@@ -201,21 +201,27 @@ test("does not treat provider failures as successful normalization", () => {
 
 test("normalizes spoken language labels to the API language values", () => {
   const draft = createInitialIntakeDraft();
-  const english = applyIntakePatch(draft, {
-    path: "complaint.language",
-    value: "English",
-  });
-  const hindi = applyIntakePatch(english, {
-    path: "complaint.language",
-    value: "Hindi",
-  });
+  const languages = [
+    ["English", "en"],
+    ["Hindi", "hi"],
+    ["Telugu", "te"],
+    ["Tamil", "ta"],
+    ["Malayalam", "ml"],
+    ["Kannada", "kn"],
+    ["Bengali", "bn"],
+  ];
 
-  assert.equal(english.complaint.language, "en");
-  assert.equal(hindi.complaint.language, "hi");
+  for (const [label, value] of languages) {
+    const updated = applyIntakePatch(draft, {
+      path: "complaint.language",
+      value: label,
+    });
+    assert.equal(updated.complaint.language, value);
+  }
   assert.throws(() => applyIntakePatch(draft, {
     path: "complaint.language",
-    value: "Tamil",
-  }), /Choose English, Hindi, or Hinglish/);
+    value: "Hinglish",
+  }), /Choose English, Hindi, Telugu, Tamil, Malayalam, Kannada, or Bengali/);
 });
 
 test("supports both Live tool-call helper names and envelopes", () => {
@@ -241,7 +247,8 @@ test("starts the Live intake with an English language-choice question", () => {
 
   const openingText = openingMessage.turns[0].parts[0].text;
   assert.match(openingText, /^Begin in English only\./);
-  assert.match(openingText, /Which language would you prefer/);
+  assert.match(openingText, /English, Hindi, Telugu, Tamil, Malayalam, Kannada, or Bengali/);
+  assert.doesNotMatch(openingText, /Hinglish/);
 });
 
 test("preserves captured values when normalization returns an incomplete draft", () => {

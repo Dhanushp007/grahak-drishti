@@ -186,13 +186,17 @@ function isMeaningful(value) {
 function normalizeIntakePatchValue(path, operation, value) {
   if (path !== "complaint.language" || operation !== "set") return value;
   if (typeof value !== "string") {
-    throw new Error("Choose English, Hindi, or Hinglish for the intake language.");
+    throw new Error("Choose English, Hindi, Telugu, Tamil, Malayalam, Kannada, or Bengali for the intake language.");
   }
   const language = value.trim().toLowerCase();
   if (language === "english" || language === "en") return "en";
   if (language === "hindi" || language === "hi") return "hi";
-  if (language === "hinglish") return "hinglish";
-  throw new Error("Choose English, Hindi, or Hinglish for the intake language.");
+  if (language === "telugu" || language === "te") return "te";
+  if (language === "tamil" || language === "ta") return "ta";
+  if (language === "malayalam" || language === "ml") return "ml";
+  if (language === "kannada" || language === "kn") return "kn";
+  if (language === "bengali" || language === "bangla" || language === "bn") return "bn";
+  throw new Error("Choose English, Hindi, Telugu, Tamil, Malayalam, Kannada, or Bengali for the intake language.");
 }
 
 function mergeNormalizedValue(current, normalized) {
