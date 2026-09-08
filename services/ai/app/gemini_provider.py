@@ -177,6 +177,11 @@ def classify_provider_exception(exc: BaseException) -> ProviderErrorKind:
         return "not_authorized"
     if code == 404 or "404" in combined or "not found" in combined:
         return "model_unavailable"
+    if code == 504 or any(
+        marker in combined
+        for marker in ("deadline_exceeded", "deadline exceeded")
+    ):
+        return "timeout"
     if isinstance(exc, TimeoutError) or "timeout" in combined:
         return "timeout"
     if "timed out" in combined:
@@ -216,7 +221,8 @@ class GeminiProvider:
         return genai.Client(
             api_key=self.settings.gemini_api_key,
             http_options=types.HttpOptions(
-                timeout=self.settings.gemini_request_timeout_ms
+                timeout=self.settings.gemini_request_timeout_ms,
+                retry_options=types.HttpRetryOptions(attempts=1),
             ),
         )
 
