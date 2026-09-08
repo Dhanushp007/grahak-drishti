@@ -15,6 +15,7 @@ test("opens the AI Consultant in a new tab", async ({ page, context }) => {
   await expect(
     consultantTab.getByRole("heading", { name: "Think it through before you file." }),
   ).toBeVisible();
-  await expect(consultantTab.getByRole("textbox", { name: "Your message" })).toBeVisible();
+  await expect(consultantTab.getByRole("button", { name: "Start conversation" })).toBeVisible();
+  await expect(consultantTab.getByRole("textbox", { name: "Your message" })).toHaveCount(0);
   await consultantTab.close();
 });

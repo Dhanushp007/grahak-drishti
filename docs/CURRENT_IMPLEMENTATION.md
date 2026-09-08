@@ -121,11 +121,10 @@ Client API modules:
 AI Consultant behavior:
 
 - The landing page opens `/consultant` in a new tab so the consumer can keep the starting page available.
-- The consultant supports typed messages and the existing Gemini Live voice/audio path.
+- The consultant uses the Gemini Live voice/audio path and presents a voice-only conversation surface.
 - Its short-lived Live token is requested with `mode=consultant`, which uses a separate advisory system instruction and no complaint-draft mutation tool.
 - It can recommend that a grievance pathway may be worth pursuing, that more information is needed, or that direct resolution may be preferable. The recommendation must explain uncertainty and is not a legal finding.
 - Guardrails reject system-prompt disclosure, secret extraction, prompt-injection instructions, fabricated or retaliatory complaints, guessed legal citations, and unsupported certainty. High-risk situations such as immediate danger, medical emergency, active fraud, or account compromise are directed to the relevant emergency or official support channel first.
-- Typed messages are capped at 4,000 characters before they are sent to the Live session.
 - The conversation does not submit a complaint, contact a seller or authority, or expose individual consumer data. The consumer must review and start a private case separately.
 
 ### 3.2 Admin dashboard

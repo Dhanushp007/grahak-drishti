@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, CircleAlert, Mic, MicOff, Send, ShieldCheck, Sparkles, Square, Volume2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleAlert, Mic, ShieldCheck, Sparkles, Square, Volume2 } from "lucide-react";
 
 import {
   buildConsultantLiveConfig,
@@ -10,41 +10,14 @@ import {
   playPcmAudioChunk,
   requestLiveToken,
   sendOpeningPrompt,
-  sendTextMessage,
   startMicrophoneInput,
 } from "../lib/gemini-live.js";
 
-const quickPrompts = [
-  "I paid for a service but did not get what was promised.",
-  "My refund is delayed and the company is not responding.",
-  "I received a product that was different from the listing.",
-];
-
-const initialMessages = [
-  {
-    id: 0,
-    role: "assistant",
-    text: "Tell me what happened in your own words. I will help you understand the next sensible step.",
-  },
-];
-
 const initialPlayback = { nextStartTime: 0 };
-const MAX_CONSULTANT_MESSAGE_LENGTH = 4000;
-
-function messageId(nextMessageId) {
-  const id = nextMessageId.current;
-  nextMessageId.current += 1;
-  return id;
-}
 
 export default function AIConsultant() {
-  const [messages, setMessages] = useState(initialMessages);
-  const [typedMessage, setTypedMessage] = useState("");
-  const [interimTranscript, setInterimTranscript] = useState("");
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
-  const nextMessageId = useRef(1);
-  const assistantMessageId = useRef(null);
   const sessionRef = useRef(null);
   const microphoneRef = useRef(null);
   const playbackContextRef = useRef(null);
@@ -69,52 +42,20 @@ export default function AIConsultant() {
 
   useEffect(() => () => closeSession(), []);
 
-  function appendUserMessage(text) {
-    assistantMessageId.current = null;
-    setMessages((current) => [...current, { id: messageId(nextMessageId), role: "user", text }]);
-  }
-
-  function appendAssistantText(text) {
-    setMessages((current) => {
-      const existingId = assistantMessageId.current;
-      const existingIndex = current.findIndex((message) => message.id === existingId);
-      if (existingIndex >= 0) {
-        const nextMessages = [...current];
-        nextMessages[existingIndex] = {
-          ...nextMessages[existingIndex],
-          text: `${nextMessages[existingIndex].text} ${text}`.trim(),
-        };
-        return nextMessages;
-      }
-      const nextMessage = { id: messageId(nextMessageId), role: "assistant", text };
-      assistantMessageId.current = nextMessage.id;
-      return [...current, nextMessage];
-    });
-  }
-
   function handleLiveMessage(message) {
     const serverContent = message?.serverContent || message?.server_content;
     const input = serverContent?.inputTranscription || serverContent?.input_transcription;
-    const interim = serverContent?.interimInputTranscription || serverContent?.interim_input_transcription;
     const output = serverContent?.outputTranscription || serverContent?.output_transcription;
 
-    if (interim?.text) setInterimTranscript(interim.text);
-    if (input?.text) {
-      appendUserMessage(input.text);
-      setInterimTranscript("");
-    }
-    if (output?.text) {
-      appendAssistantText(output.text);
-      setStatus((current) => current === "listening" ? current : "thinking");
-    }
+    if (input?.text) setStatus("listening");
+    if (output?.text) setStatus("thinking");
     if (message?.data) {
       if (!playbackContextRef.current) playbackContextRef.current = new AudioContext();
       void playbackContextRef.current.resume();
       playPcmAudioChunk(playbackContextRef.current, message.data, playbackRef.current);
     }
     if (serverContent?.turnComplete) {
-      assistantMessageId.current = null;
-      setStatus((current) => current === "listening" ? current : "ready");
+      setStatus(microphoneRef.current ? "listening" : "ready");
     }
   }
 
@@ -163,7 +104,7 @@ export default function AIConsultant() {
       }
     } catch (startError) {
       setStatus(sessionRef.current ? "ready" : "error");
-      setError(startError instanceof Error ? startError.message : "Voice assistance is unavailable. You can type instead.");
+      setError(startError instanceof Error ? startError.message : "Voice conversation is unavailable. Please try again.");
     }
   }
 
@@ -172,45 +113,23 @@ export default function AIConsultant() {
     setStatus(sessionRef.current ? "ready" : "idle");
   }
 
-  async function sendMessage(value) {
-    const message = value.trim();
-    if (!message) return;
-    if (message.length > MAX_CONSULTANT_MESSAGE_LENGTH) {
-      setError(`Please keep your message under ${MAX_CONSULTANT_MESSAGE_LENGTH.toLocaleString("en-IN")} characters.`);
-      return;
-    }
-    setError("");
-    appendUserMessage(message);
-    setTypedMessage("");
-    setInterimTranscript("");
-    try {
-      const session = await ensureSession();
-      sendTextMessage(session, message);
-      if (!microphoneRef.current) setStatus("thinking");
-    } catch (sendError) {
-      setStatus("error");
-      setError(sendError instanceof Error ? sendError.message : "The message could not be sent. Please try again.");
-    }
-  }
-
-  function submitMessage(event) {
-    event.preventDefault();
-    void sendMessage(typedMessage);
-  }
-
-  function choosePrompt(prompt) {
-    void sendMessage(prompt);
-  }
-
-  const isListening = status === "listening";
+  const conversationActive = status === "listening" || status === "thinking";
   const statusLabel = {
     idle: "Ready when you are",
     connecting: "Connecting securely",
-    ready: "Conversation ready",
-    listening: "Listening",
-    thinking: "Thinking",
+    ready: "Ready to begin",
+    listening: "Listening to you",
+    thinking: "Your consultant is speaking",
     error: "Needs attention",
   }[status] || "Ready when you are";
+  const voiceStatusDescription = {
+    idle: "Your AI Consultant will introduce itself and ask what happened.",
+    connecting: "Opening a secure voice session...",
+    ready: "Press start when you are ready to speak.",
+    listening: "Speak naturally. Your AI Consultant is listening.",
+    thinking: "Your AI Consultant is preparing a response.",
+    error: "Try starting the conversation again.",
+  }[status] || "Your AI Consultant is ready when you are.";
 
   return (
     <main className="page-shell consultant-shell">
@@ -246,23 +165,18 @@ export default function AIConsultant() {
             <div className={`consultant-status consultant-status-${status}`} aria-live="polite"><span className="consultant-status-dot" />{statusLabel}</div>
           </header>
 
-          <div className="consultant-messages" role="log" aria-live="polite" aria-label="Conversation with AI Consultant">
-            {messages.map((message) => <div className={`consultant-message consultant-message-${message.role}`} key={message.id}><span className="consultant-message-label">{message.role === "assistant" ? "AI Consultant" : "You"}</span><p>{message.text}</p></div>)}
-            {interimTranscript && <div className="consultant-interim"><Mic size={14} /> {interimTranscript}</div>}
+          <div className="consultant-voice-stage" aria-live="polite">
+            <div className={conversationActive ? "consultant-voice-orb is-active" : "consultant-voice-orb"} aria-hidden="true"><Mic size={44} /></div>
+            <p className="consultant-voice-kicker">Voice conversation</p>
+            <h3>Speak with your AI Consultant</h3>
+            <p className="consultant-voice-copy">{voiceStatusDescription}</p>
+            <button className={conversationActive ? "consultant-start-button is-active" : "consultant-start-button"} type="button" onClick={conversationActive ? stopVoice : startVoice} disabled={status === "connecting"}>
+              {conversationActive ? <Square size={17} fill="currentColor" /> : <Mic size={18} />}
+              {conversationActive ? "Stop conversation" : "Start conversation"}
+            </button>
           </div>
 
           {error && <div className="consultant-error" role="alert"><CircleAlert size={17} /> <span>{error}</span></div>}
-
-          <div className="consultant-quick-prompts" aria-label="Suggested conversation starters">
-            <span>Start with</span>
-            {quickPrompts.map((prompt) => <button type="button" key={prompt} onClick={() => choosePrompt(prompt)} disabled={status === "connecting"}>{prompt}</button>)}
-          </div>
-
-          <form className="consultant-composer" onSubmit={submitMessage}>
-            <label htmlFor="consultantMessage">Your message</label>
-            <div className="consultant-composer-row"><textarea id="consultantMessage" value={typedMessage} onChange={(event) => setTypedMessage(event.target.value)} placeholder="For example: I cancelled an order, but the refund has not arrived." rows="2" maxLength={MAX_CONSULTANT_MESSAGE_LENGTH} /><div className="consultant-composer-actions"><button className={isListening ? "consultant-voice-button is-active" : "consultant-voice-button"} type="button" onClick={isListening ? stopVoice : startVoice} disabled={status === "connecting"} aria-label={isListening ? "Stop listening" : "Start voice conversation"} title={isListening ? "Stop listening" : "Start voice conversation"}>{isListening ? <Square size={16} fill="currentColor" /> : status === "error" ? <MicOff size={17} /> : <Mic size={17} />}</button><button className="consultant-send-button" type="submit" disabled={!typedMessage.trim() || status === "connecting"} aria-label="Send message" title="Send message"><Send size={17} /></button></div></div>
-            <p className="consultant-composer-note">Press send to continue by text, or use the microphone to speak.</p>
-          </form>
 
           <p className="consultant-disclosure"><Volume2 size={14} /> Voice audio is sent to Google Gemini for this live session. Audio and unfinished conversation notes are not retained by this application.</p>
         </section>

@@ -32,7 +32,7 @@ export const CONSULTANT_SYSTEM_INSTRUCTION = [
   "At the end, summarize the known facts, unknown facts, suggested next step, and simple recommendation.",
 ].join(" ");
 
-export const CONSULTANT_OPENING_PROMPT = "Please welcome the consumer briefly and ask what happened, without requesting personal identifiers.";
+export const CONSULTANT_OPENING_PROMPT = "Introduce yourself as the GRAHAK-DRISHTI AI Consultant, welcome the consumer briefly, explain that you can help them think through what happened and the next sensible step, then ask what happened. Do not request personal identifiers.";
 
 const PATCH_TOOL = {
   name: "patch_intake_draft",
