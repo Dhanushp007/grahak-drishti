@@ -48,25 +48,25 @@ export default function LoginPage() {
       </header>
       <section className="login-layout" aria-labelledby="login-title">
         <div className="login-intro">
-          <p className="eyebrow">Your private starting point</p>
+          <p className="eyebrow">Synthetic demo access</p>
           <h1 id="login-title">Sign in to begin.</h1>
-          <p className="intro">Use a citizen profile to create and follow your private consumer case.</p>
-          <div className="trust-note"><ShieldCheck size={19} aria-hidden="true" /><span>Your contact details are used only for private case access.</span></div>
+          <p className="intro">Open the prepared citizen journey: report a delayed QuickKart refund, receive a docket, and see how one private case becomes an aggregate issue signal.</p>
+          <div className="trust-note"><ShieldCheck size={19} aria-hidden="true" /><span>This uses synthetic data only. No real account or complaint is created.</span></div>
         </div>
         <div className="form-card login-card">
           <div className="form-card-heading">
-            <div><p className="eyebrow">Citizen access</p><h2>Continue securely</h2></div>
+            <div><p className="eyebrow">Citizen demo</p><h2>Open the prepared journey</h2></div>
           </div>
-          <p className="login-card-copy">{isConsultantContinuation ? "Your consultant notes are ready. Sign in to continue in Speak mode and add anything still missing." : "This demo opens a prepared citizen profile so you can experience the complete case journey."}</p>
+          <p className="login-card-copy">{isConsultantContinuation ? "Your consultant notes are ready. Continue in Speak mode to review them and add anything still missing." : "Use the prepared synthetic profile to follow the refund-delay story from private report to public issue signal."}</p>
           {error && <p className="submission-error" role="alert">{error}</p>}
           <button className="submit-button" type="button" onClick={signIn} disabled={isLoggingIn}>
             {isLoggingIn ? <><LoaderCircle className="spin" size={18} /> Signing you in...</> : isConsultantContinuation ? <>Log in and continue to Speak <ArrowRight size={18} /></> : <>Continue as citizen <UserRoundCheck size={18} /></>}
           </button>
-          <p className="form-footnote">Demo environment · synthetic data only</p>
+          <p className="form-footnote">Synthetic profile · no real account or complaint</p>
           <a className="login-track-link" href="/track">Already have a docket? Track it <ArrowRight size={15} /></a>
         </div>
       </section>
-      <footer className="page-footer"><span>Existing grievance systems remain part of your resolution journey.</span><a href="/issues">Explore issue signals <ArrowRight size={14} /></a></footer>
+      <footer className="page-footer"><span>Hackathon demo · Existing grievance systems remain separate.</span><a href="/issues">Explore issue signals <ArrowRight size={14} /></a></footer>
     </main>
   );
 }
