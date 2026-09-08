@@ -183,6 +183,7 @@ export function ComplaintPage() {
   const [intakeMode, setIntakeMode] = useState("text");
   const [consultantHandoff, setConsultantHandoff] = useState(null);
   const [docketCopyStatus, setDocketCopyStatus] = useState("");
+  const [websiteTrap, setWebsiteTrap] = useState("");
 
   useEffect(() => {
     if (window.sessionStorage.getItem("gd-demo-contact")) {
@@ -276,12 +277,19 @@ export function ComplaintPage() {
 
   async function submitComplaint(event) {
     event.preventDefault();
+    if (websiteTrap) return;
+    const lastSubmission = Number(window.sessionStorage.getItem("gd-last-submission-at") || 0);
+    if (Date.now() - lastSubmission < 5000) {
+      setSubmissionError("Please wait a few seconds before sending another report.");
+      return;
+    }
     const validationErrors = validateComplaintForm(form);
     setErrors(validationErrors);
     setSubmissionError("");
     if (Object.keys(validationErrors).length > 0) return;
     try {
       await submitPayload(buildComplaintPayload(form));
+      window.sessionStorage.setItem("gd-last-submission-at", String(Date.now()));
     } catch {
       return;
     }
@@ -408,7 +416,7 @@ export function ComplaintPage() {
           <div className="form-card-heading">
             <div>
               <p className="eyebrow">Step 01</p>
-              <h2>Report an issue</h2>
+              <h2>{intakeMode === "text" ? "Quick report" : "Guided voice intake"}</h2>
             </div>
             <span className="required-note">* Required</span>
           </div>
@@ -417,8 +425,10 @@ export function ComplaintPage() {
             <button type="button" role="tab" aria-selected={intakeMode === "text"} className={intakeMode === "text" ? "intake-mode-active" : ""} onClick={() => setIntakeMode("text")}><Keyboard size={15} /> Write</button>
             <button type="button" role="tab" aria-selected={intakeMode === "voice"} className={intakeMode === "voice" ? "intake-mode-active" : ""} onClick={() => setIntakeMode("voice")}><Mic size={15} /> Speak</button>
           </div>
+          <p className="intake-mode-note">{intakeMode === "text" ? "Share the essentials now. You can add evidence and details after your docket is created." : "Speak naturally. We will build the same private complaint draft and ask you to review it before creating a docket."}</p>
 
           {intakeMode === "voice" ? <VoiceIntake onSubmitDraft={submitPayload} initialHandoff={consultantHandoff} onDiscardHandoff={() => setConsultantHandoff(null)} onUseText={useTextIntake} /> : <form onSubmit={submitComplaint} noValidate>
+            <div className="form-honeypot" aria-hidden="true"><label htmlFor="website">Website</label><input id="website" name="website" tabIndex="-1" autoComplete="off" value={websiteTrap} onChange={(event) => setWebsiteTrap(event.target.value)} /></div>
             <div className="field-group">
               <label htmlFor="description">What happened? <span>*</span></label>
               <textarea

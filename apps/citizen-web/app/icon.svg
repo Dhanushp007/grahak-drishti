@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>GRAHAK-DRISHTI</title>
+  <rect width="64" height="64" rx="12" fill="#17231f"/>
+  <path d="M16 18h32v8H25v7h18v8H25v5h23v8H16z" fill="#e96f51"/>
+  <circle cx="47" cy="18" r="5" fill="#f3d37c"/>
+</svg>

@@ -5,6 +5,10 @@ export const metadata = {
   description: "Create a private consumer case, track it, and see aggregate issue signals.",
 };
 
+export const viewport = {
+  themeColor: "#17231f",
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">

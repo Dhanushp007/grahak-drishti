@@ -288,16 +288,16 @@ function LiveDraftPanel({ draft, reviewFlags, onChange, lastUpdatedPath }) {
           const sectionProgress = progress.sections.find((item) => item.id === section.id);
           const SectionIcon = section.icon;
           return (
-            <section className={`live-field-section ${progress.activeSection.id === section.id ? "is-active" : ""}`} key={section.id}>
-              <div className="live-field-section-heading">
+            <details className={`live-field-section ${progress.activeSection.id === section.id ? "is-active" : ""}`} key={section.id} open={progress.activeSection.id === section.id}>
+              <summary className="live-field-section-heading">
                 <span className="live-section-icon"><SectionIcon size={16} /></span>
                 <div><h4>{section.label}</h4><p>{section.description}</p></div>
                 <span className="live-section-count">{sectionProgress.capturedCount}/{sectionProgress.totalCount}</span>
-              </div>
+              </summary>
               <div className="live-fields-grid">
                 {section.fields.map((field) => <LiveDraftField key={field.path} draft={draft} field={field} reviewFlags={reviewFlags} onChange={onChange} isUpdated={lastUpdatedPath === field.path} />)}
               </div>
-            </section>
+            </details>
           );
         })}
       </div>
