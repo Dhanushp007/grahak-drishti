@@ -3,21 +3,25 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, LoaderCircle, ShieldCheck, UserRoundCheck } from "lucide-react";
 
+import { CONSULTANT_HANDOFF_STORAGE_KEY, CONSULTANT_VOICE_RETURN_PATH } from "../../lib/consultant-handoff.js";
 import { loginAsDemoCitizen } from "../../lib/demo.js";
 
 function getReturnPath() {
   if (typeof window === "undefined") return "/report";
   const returnTo = new URLSearchParams(window.location.search).get("returnTo");
-  return returnTo === "/report" ? returnTo : "/report";
+  return ["/report", "/report?intakeMode=voice"].includes(returnTo) ? returnTo : "/report";
 }
 
 export default function LoginPage() {
   const [returnPath, setReturnPath] = useState("/report");
+  const [isConsultantContinuation, setIsConsultantContinuation] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setReturnPath(getReturnPath());
+    const nextReturnPath = getReturnPath();
+    setReturnPath(nextReturnPath);
+    setIsConsultantContinuation(nextReturnPath === CONSULTANT_VOICE_RETURN_PATH && Boolean(window.sessionStorage.getItem(CONSULTANT_HANDOFF_STORAGE_KEY)));
   }, []);
 
   async function signIn() {
@@ -53,10 +57,10 @@ export default function LoginPage() {
           <div className="form-card-heading">
             <div><p className="eyebrow">Citizen access</p><h2>Continue securely</h2></div>
           </div>
-          <p className="login-card-copy">This demo opens a prepared citizen profile so you can experience the complete case journey.</p>
+          <p className="login-card-copy">{isConsultantContinuation ? "Your consultant notes are ready. Sign in to continue in Speak mode and add anything still missing." : "This demo opens a prepared citizen profile so you can experience the complete case journey."}</p>
           {error && <p className="submission-error" role="alert">{error}</p>}
           <button className="submit-button" type="button" onClick={signIn} disabled={isLoggingIn}>
-            {isLoggingIn ? <><LoaderCircle className="spin" size={18} /> Signing you in...</> : <>Continue as citizen <UserRoundCheck size={18} /></>}
+            {isLoggingIn ? <><LoaderCircle className="spin" size={18} /> Signing you in...</> : isConsultantContinuation ? <>Log in and continue to Speak <ArrowRight size={18} /></> : <>Continue as citizen <UserRoundCheck size={18} /></>}
           </button>
           <p className="form-footnote">Demo environment · synthetic data only</p>
           <a className="login-track-link" href="/track">Already have a docket? Track it <ArrowRight size={15} /></a>
