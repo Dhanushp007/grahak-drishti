@@ -336,6 +336,15 @@ export function ComplaintPage() {
             <ShieldCheck size={19} aria-hidden="true" />
             <span>Your contact is used only to let you track your private case.</span>
           </div>
+          <div className="report-journey" aria-labelledby="report-journey-title">
+            <p className="eyebrow">What happens next</p>
+            <h2 id="report-journey-title">One private report, three useful steps.</h2>
+            <ol>
+              <li><span>01</span><div><strong>Get a docket</strong><p>Your report is saved privately so you can follow it.</p></div></li>
+              <li><span>02</span><div><strong>See the pattern</strong><p>Similar consumer experiences become an aggregate issue signal.</p></div></li>
+              <li><span>03</span><div><strong>Strengthen the signal</strong><p>Evidence-backed corroboration helps analysts see what matters.</p></div></li>
+            </ol>
+          </div>
         </div>
 
         <div className="form-card">

@@ -441,6 +441,14 @@ h2 { font-size: 2rem; font-weight: 600; line-height: 1.1; }
 .hero-copy { padding-top: 38px; }
 .hero-copy h1 { max-width: 510px; }
 .intro { color: #50625a; font-size: 18px; line-height: 1.65; margin-top: 26px; max-width: 410px; }
+.report-journey { border-top: 1px solid var(--line); margin-top: 46px; max-width: 480px; padding-top: 22px; }
+.report-journey h2 { font-size: 1.65rem; max-width: 360px; }
+.report-journey ol { list-style: none; margin: 24px 0 0; padding: 0; }
+.report-journey li { align-items: flex-start; border-top: 1px solid var(--line); display: flex; gap: 16px; padding: 14px 0; }
+.report-journey li > span { color: var(--coral); font-family: var(--font-number); font-size: 11px; padding-top: 2px; }
+.report-journey strong, .report-journey p { font-family: var(--font-body); }
+.report-journey strong { font-size: 12px; }
+.report-journey p { color: var(--muted); font-size: 11px; line-height: 1.45; margin: 3px 0 0; }
 .eyebrow { font-size: 10px; letter-spacing: .16em; margin-bottom: 15px; }
 .trust-note { font-size: 12px; line-height: 1.6; margin-top: 48px; }
 .form-card { border-radius: 8px; box-shadow: 12px 12px 0 var(--mint); padding: 38px; }

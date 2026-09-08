@@ -704,7 +704,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText, initialHandoff =
             <label htmlFor="typedFollowUp">Type a correction or answer</label>
             <div className="typed-follow-up-row"><input id="typedFollowUp" value={typedMessage} onChange={(event) => setTypedMessage(event.target.value)} placeholder="For example: The amount was Rs. 2,499" /><button className="icon-button" type="button" onClick={sendTypedMessage} disabled={!typedMessage.trim() || !sessionRef.current} aria-label="Send correction" title="Send correction"><Send size={17} /></button></div>
           </div>
-          <div className="voice-review-action"><div><strong>Ready to check the draft?</strong><p>Review every captured detail before anything is submitted.</p></div><button className="primary-button" type="button" onClick={prepareReview} disabled={isNormalizing}><Check size={17} /> Review draft</button></div>
+          <div className="voice-review-action"><div><strong>Ready to check the draft?</strong><p>Review every captured detail before your docket is created.</p></div><button className="primary-button" type="button" onClick={prepareReview} disabled={isNormalizing}><Check size={17} /> Review before creating docket</button></div>
         </div>
         <LiveDraftPanel draft={draft} reviewFlags={getReviewFlags(draft)} onChange={updatePath} lastUpdatedPath={lastUpdatedPath} />
       </div>
