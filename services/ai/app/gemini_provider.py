@@ -277,7 +277,8 @@ class GeminiProvider:
         try:
             from google.genai import types
 
-            response = self._client().models.generate_content(
+            client = self._client()
+            response = client.models.generate_content(
                 model=self.settings.gemini_extraction_model,
                 contents=prompt,
                 config=types.GenerateContentConfig(
