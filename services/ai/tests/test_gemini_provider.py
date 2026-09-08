@@ -64,4 +64,8 @@ def test_client_configures_bounded_retries_for_transient_gemini_failures(
     retry_options = http_options.retry_options
     assert http_options.timeout == 15000
     assert retry_options.attempts == 3
+    assert retry_options.initial_delay == 0.25
+    assert retry_options.max_delay == 2.0
+    assert retry_options.jitter == 0.25
     assert retry_options.http_status_codes == [408, 429, 500, 502, 503, 504]
+    assert not set(retry_options.http_status_codes).intersection({400, 401, 403, 404})

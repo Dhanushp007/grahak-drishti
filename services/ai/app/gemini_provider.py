@@ -14,6 +14,9 @@ from services.api.app.intake_schemas import (
 logger = logging.getLogger(__name__)
 
 GEMINI_RETRY_ATTEMPTS = 3
+GEMINI_RETRY_INITIAL_DELAY_SECONDS = 0.25
+GEMINI_RETRY_MAX_DELAY_SECONDS = 2.0
+GEMINI_RETRY_JITTER_SECONDS = 0.25
 GEMINI_RETRY_STATUS_CODES = (408, 429, 500, 502, 503, 504)
 
 LIVE_SYSTEM_INSTRUCTION = """
@@ -227,6 +230,9 @@ class GeminiProvider:
                 timeout=self.settings.gemini_request_timeout_ms,
                 retry_options=types.HttpRetryOptions(
                     attempts=GEMINI_RETRY_ATTEMPTS,
+                    initial_delay=GEMINI_RETRY_INITIAL_DELAY_SECONDS,
+                    max_delay=GEMINI_RETRY_MAX_DELAY_SECONDS,
+                    jitter=GEMINI_RETRY_JITTER_SECONDS,
                     http_status_codes=list(GEMINI_RETRY_STATUS_CODES),
                 ),
             ),
