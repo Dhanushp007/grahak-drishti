@@ -145,3 +145,28 @@ def test_normalize_endpoint_exposes_safe_rate_limit_reason(client: TestClient) -
 
     assert response.status_code == 503
     assert response.json()["provider_error"] == "rate_limited"
+
+
+def test_normalize_endpoint_preserves_draft_for_upstream_failure(
+    client: TestClient,
+) -> None:
+    from services.ai.app.gemini_provider import GeminiProviderError
+
+    class UpstreamFailureProvider:
+        def normalize(self, request):
+            raise GeminiProviderError("503 UNAVAILABLE", reason="upstream_failure")
+
+    app.dependency_overrides[provider_dependency] = lambda: UpstreamFailureProvider()
+    response = client.post(
+        "/api/v1/intake/normalize",
+        json={
+            "draft": {"complaint": {"description": "Captured complaint details."}},
+            "transcript": "The service is unavailable.",
+        },
+    )
+
+    assert response.status_code == 503
+    body = response.json()
+    assert body["status"] == "provider_unavailable"
+    assert body["provider_error"] == "upstream_failure"
+    assert body["draft"]["complaint"]["description"] == "Captured complaint details."
