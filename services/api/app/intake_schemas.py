@@ -28,6 +28,23 @@ class IntakeComplaint(IntakeModel):
     submitted_at: datetime | None = None
     self_assessed_priority: str | None = Field(default=None, max_length=32)
 
+    @field_validator("language", mode="before")
+    @classmethod
+    def normalize_language(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        aliases = {
+            "english": "en",
+            "en": "en",
+            "hindi": "hi",
+            "hi": "hi",
+            "hinglish": "hinglish",
+            "auto": "auto",
+        }
+        if isinstance(value, str):
+            return aliases.get(value.strip().lower(), value)
+        return value
+
 
 class IntakeContact(IntakeModel):
     email: str | None = Field(default=None, max_length=320)
@@ -236,6 +253,21 @@ class IntakeNormalizeRequest(IntakeModel):
     draft: IntakeDraft
     transcript: str | None = Field(default=None, max_length=30000)
     language_hint: Literal["auto", "en", "hi", "hinglish"] = "auto"
+
+    @field_validator("language_hint", mode="before")
+    @classmethod
+    def normalize_language_hint(cls, value: str) -> str:
+        aliases = {
+            "english": "en",
+            "en": "en",
+            "hindi": "hi",
+            "hi": "hi",
+            "hinglish": "hinglish",
+            "auto": "auto",
+        }
+        if isinstance(value, str):
+            return aliases.get(value.strip().lower(), value)
+        return value
 
 
 class IntakeNormalizeResponse(IntakeModel):

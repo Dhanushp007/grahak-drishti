@@ -9,10 +9,13 @@ import {
   createInitialIntakeDraft,
   formatIntakePath,
   getReviewFlags,
+  mergeNormalizedIntakeDraft,
   validateIntakeReview,
 } from "../lib/intake.js";
 import {
   connectGeminiLive,
+  getLiveFunctionCalls,
+  parseLiveFunctionArgs,
   playPcmAudioChunk,
   requestLiveToken,
   sendOpeningPrompt,
@@ -61,6 +64,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
   const [reviewErrors, setReviewErrors] = useState({});
   const [submissionError, setSubmissionError] = useState("");
   const draftRef = useRef(draft);
+  const transcriptRef = useRef("");
   const sessionRef = useRef(null);
   const microphoneRef = useRef(null);
   const playbackContextRef = useRef(null);
@@ -94,11 +98,11 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
   useEffect(() => () => stopResources(), []);
 
   function handleToolCall(message) {
-    const calls = message?.toolCall?.functionCalls || message?.tool_call?.function_calls || [];
-    if (!calls.length || !sessionRef.current) return;
+    const calls = getLiveFunctionCalls(message);
+    if (!calls.length) return;
     const functionResponses = calls.map((call) => {
       try {
-        const args = typeof call.args === "string" ? JSON.parse(call.args) : call.args || {};
+        const args = parseLiveFunctionArgs(call);
         const patch = {
           ...args,
           value: coerceToolValue(args.value),
@@ -109,7 +113,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
         return { id: call.id, name: call.name, response: { error: patchError instanceof Error ? patchError.message : "Draft field was rejected" } };
       }
     });
-    sessionRef.current.sendToolResponse({ functionResponses });
+    sessionRef.current?.sendToolResponse({ functionResponses });
   }
 
   function handleLiveMessage(message) {
@@ -119,7 +123,8 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
     const output = serverContent?.outputTranscription || serverContent?.output_transcription;
     if (interim?.text) setInterimTranscript(interim.text);
     if (input?.text) {
-      setTranscript((current) => `${current} ${input.text}`.trim());
+      transcriptRef.current = `${transcriptRef.current} ${input.text}`.trim();
+      setTranscript(transcriptRef.current);
       setInterimTranscript("");
     }
     if (output?.text) setAssistantTranscript((current) => `${current} ${output.text}`.trim());
@@ -173,7 +178,8 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
     const message = typedMessage.trim();
     if (!message || !sessionRef.current) return;
     sendTextMessage(sessionRef.current, message);
-    setTranscript((current) => `${current} ${message}`.trim());
+    transcriptRef.current = `${transcriptRef.current} ${message}`.trim();
+    setTranscript(transcriptRef.current);
     setTypedMessage("");
   }
 
@@ -186,10 +192,13 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
       const response = await fetch("/api/backend/api/v1/intake/normalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draft: draftRef.current, transcript: transcript.trim() || null, language_hint: draftRef.current.complaint.language || "auto" }),
+        body: JSON.stringify({ draft: draftRef.current, transcript: transcriptRef.current.trim() || null, language_hint: draftRef.current.complaint.language || "auto" }),
       });
       const body = await response.json().catch(() => null);
-      if (body?.draft) updateDraft({ ...body.draft, provider: body.provider || "gemini", model: body.model || null });
+      if (body?.draft) {
+        const normalizedDraft = mergeNormalizedIntakeDraft(draftRef.current, body.draft);
+        updateDraft({ ...normalizedDraft, provider: body.provider || "gemini", model: body.model || null });
+      }
       if (!response.ok && !body?.draft) throw new Error(body?.error?.message || "The draft could not be prepared for review.");
       setIsReviewing(true);
       setStatus("review");
