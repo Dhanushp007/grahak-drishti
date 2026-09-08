@@ -229,24 +229,47 @@ export function pcmFloat32ToBase64(samples, inputRate) {
   return btoa(binary);
 }
 
+function pcmInt16ToBase64(samples) {
+  const bytes = new Uint8Array(samples.buffer, samples.byteOffset, samples.byteLength);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
 export async function startMicrophoneInput(session) {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error("This browser cannot access a microphone. You can continue by typing instead.");
   }
+  if (!window.AudioWorkletNode) {
+    throw new Error("This browser cannot run the low-latency microphone processor. You can type instead.");
+  }
   const mediaStream = await navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+    audio: {
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: false,
+    },
   });
-  const audioContext = new AudioContext();
+  const audioContext = new AudioContext({ latencyHint: "interactive" });
   await audioContext.resume();
+  await audioContext.audioWorklet.addModule("/audio-capture-worklet.js");
   const source = audioContext.createMediaStreamSource(mediaStream);
-  const processor = audioContext.createScriptProcessor(4096, 1, 1);
+  const processor = new AudioWorkletNode(audioContext, "gd-microphone-capture", {
+    numberOfInputs: 1,
+    numberOfOutputs: 1,
+    outputChannelCount: [1],
+    processorOptions: { targetRate: 16000 },
+  });
   const silentGain = audioContext.createGain();
+  const captureState = { muted: false };
   silentGain.gain.value = 0;
-  processor.onaudioprocess = (event) => {
-    const samples = event.inputBuffer.getChannelData(0);
+  processor.port.onmessage = (event) => {
+    if (captureState.muted) return;
+    const samples = new Int16Array(event.data);
     session.sendRealtimeInput({
       audio: {
-        data: pcmFloat32ToBase64(samples, audioContext.sampleRate),
+        data: pcmInt16ToBase64(samples),
         mimeType: "audio/pcm;rate=16000",
       },
     });
@@ -255,8 +278,13 @@ export async function startMicrophoneInput(session) {
   processor.connect(silentGain);
   silentGain.connect(audioContext.destination);
   return {
+    setMuted(muted) {
+      captureState.muted = Boolean(muted);
+      processor.port.postMessage({ type: "mute", muted: captureState.muted });
+    },
     stop() {
-      processor.onaudioprocess = null;
+      processor.port.onmessage = null;
+      processor.port.postMessage({ type: "mute", muted: true });
       source.disconnect();
       processor.disconnect();
       silentGain.disconnect();
@@ -283,7 +311,24 @@ export function playPcmAudioChunk(audioContext, base64Audio, playback) {
   const source = audioContext.createBufferSource();
   source.buffer = buffer;
   source.connect(audioContext.destination);
-  const startAt = Math.max(audioContext.currentTime, playback.nextStartTime);
+  playback.sources ||= new Set();
+  playback.sources.add(source);
+  source.addEventListener("ended", () => playback.sources.delete(source), { once: true });
+  const startAt = Math.max(audioContext.currentTime + 0.015, playback.nextStartTime);
   source.start(startAt);
   playback.nextStartTime = startAt + buffer.duration;
+  return playback.nextStartTime;
+}
+
+export function stopPcmAudio(audioContext, playback) {
+  for (const source of playback.sources || []) {
+    try {
+      source.stop();
+    } catch {
+      // A source that already ended cannot be stopped again.
+    }
+    source.disconnect();
+  }
+  playback.sources?.clear();
+  playback.nextStartTime = audioContext?.currentTime || 0;
 }

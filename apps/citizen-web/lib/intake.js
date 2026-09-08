@@ -209,6 +209,7 @@ function mergeNormalizedValue(current, normalized) {
         : current[index]
     ));
   }
+  if (Array.isArray(current) && !Array.isArray(normalized)) return current;
   if (
     current
     && normalized

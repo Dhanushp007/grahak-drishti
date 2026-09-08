@@ -30,6 +30,7 @@ import {
   requestLiveToken,
   sendOpeningPrompt,
   sendTextMessage,
+  stopPcmAudio,
   startMicrophoneInput,
 } from "../lib/gemini-live.js";
 
@@ -190,12 +191,19 @@ function liveFieldValue(value) {
   return value ?? "";
 }
 
+function listFieldValue(value) {
+  if (Array.isArray(value)) return value.join(", ");
+  if (value === null || value === undefined || value === "") return "";
+  return String(value);
+}
+
 function liveFieldSummary(value, field) {
   if (field.displayType === "count") {
     return value?.length ? `${value.length} captured` : "Nothing added yet";
   }
   if (field.displayType === "list") {
-    return value?.length ? value.join(", ") : "Nothing provided";
+    const displayValue = listFieldValue(value);
+    return displayValue || "Nothing provided";
   }
   if (value === null || value === undefined || value === "") return "Not provided yet";
   if (typeof value === "boolean") return value ? "Yes" : "No";
@@ -322,6 +330,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
   const microphoneRef = useRef(null);
   const playbackContextRef = useRef(null);
   const playbackRef = useRef(initialPlayback);
+  const playbackResumeTimerRef = useRef(null);
 
   function updateDraft(nextDraft, updatedPath = "") {
     draftRef.current = nextDraft;
@@ -370,7 +379,13 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
     microphoneRef.current = null;
     sessionRef.current?.close?.();
     sessionRef.current = null;
+    if (playbackResumeTimerRef.current) {
+      window.clearTimeout(playbackResumeTimerRef.current);
+      playbackResumeTimerRef.current = null;
+    }
+    microphoneRef.current?.setMuted?.(false);
     if (playbackContextRef.current) {
+      stopPcmAudio(playbackContextRef.current, playbackRef.current);
       void playbackContextRef.current.close();
       playbackContextRef.current = null;
     }
@@ -432,9 +447,18 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
     }
     if (output?.text) setAssistantTranscript((current) => `${current} ${output.text}`.trim());
     if (message?.data) {
-      if (!playbackContextRef.current) playbackContextRef.current = new AudioContext();
+      microphoneRef.current?.setMuted?.(true);
+      if (!playbackContextRef.current) {
+        playbackContextRef.current = new AudioContext({ latencyHint: "interactive" });
+      }
       void playbackContextRef.current.resume();
-      playPcmAudioChunk(playbackContextRef.current, message.data, playbackRef.current);
+      const playbackEnd = playPcmAudioChunk(playbackContextRef.current, message.data, playbackRef.current);
+      if (playbackResumeTimerRef.current) window.clearTimeout(playbackResumeTimerRef.current);
+      const resumeDelay = Math.max(120, (playbackEnd - playbackContextRef.current.currentTime) * 1000 + 120);
+      playbackResumeTimerRef.current = window.setTimeout(() => {
+        microphoneRef.current?.setMuted?.(false);
+        playbackResumeTimerRef.current = null;
+      }, resumeDelay);
     }
     handleToolCall(message);
   }
@@ -609,7 +633,7 @@ export default function VoiceIntake({ onSubmitDraft, onUseText }) {
               <ReviewField label="Requested remedy" value={draft.requested_remedy.primary} onChange={(value) => updatePath("requested_remedy.primary", value)} />
               <ReviewField label="Amount requested (INR)" value={draft.requested_remedy.amount_requested} onChange={(value) => updatePath("requested_remedy.amount_requested", value)} type="number" />
             </div>
-            <ReviewField label="Other requests, one per line" value={(draft.requested_remedy.other_requests || []).join("\n")} onChange={(value) => updatePath("requested_remedy.other_requests", value.split("\n").map((item) => item.trim()).filter(Boolean))} multiline />
+            <ReviewField label="Other requests, one per line" value={liveFieldValue(draft.requested_remedy.other_requests)} onChange={(value) => updatePath("requested_remedy.other_requests", value.split("\n").map((item) => item.trim()).filter(Boolean))} multiline />
             <p className="review-meta">{draft.resolution_attempts.length} resolution attempt{draft.resolution_attempts.length === 1 ? "" : "s"} captured · {draft.evidence.length} evidence item{draft.evidence.length === 1 ? "" : "s"} described</p>
           </fieldset>
           <fieldset className="review-section consent-section"><legend>Before you submit</legend>
