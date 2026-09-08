@@ -179,6 +179,8 @@ def classify_provider_exception(exc: BaseException) -> ProviderErrorKind:
         return "model_unavailable"
     if isinstance(exc, TimeoutError) or "timeout" in combined:
         return "timeout"
+    if "timed out" in combined:
+        return "timeout"
     if code == 400 or "invalid argument" in combined or "bad request" in combined:
         return "invalid_request"
     return "upstream_failure"
@@ -208,9 +210,15 @@ class GeminiProvider:
             raise GeminiNotConfiguredError("GEMINI_API_KEY is not configured")
         try:
             from google import genai
+            from google.genai import types
         except ImportError as exc:
             raise GeminiProviderError("google-genai is not installed") from exc
-        return genai.Client(api_key=self.settings.gemini_api_key)
+        return genai.Client(
+            api_key=self.settings.gemini_api_key,
+            http_options=types.HttpOptions(
+                timeout=self.settings.gemini_request_timeout_ms
+            ),
+        )
 
     def live_config(self) -> dict[str, object]:
         return {
