@@ -105,6 +105,58 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function isMeaningful(value) {
+  if (value === null || value === undefined || value === false) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function normalizeIntakePatchValue(path, operation, value) {
+  if (path !== "complaint.language" || operation !== "set") return value;
+  if (typeof value !== "string") {
+    throw new Error("Choose English, Hindi, or Hinglish for the intake language.");
+  }
+  const language = value.trim().toLowerCase();
+  if (language === "english" || language === "en") return "en";
+  if (language === "hindi" || language === "hi") return "hi";
+  if (language === "hinglish") return "hinglish";
+  throw new Error("Choose English, Hindi, or Hinglish for the intake language.");
+}
+
+function mergeNormalizedValue(current, normalized) {
+  if (normalized === undefined) return current;
+  if (Array.isArray(current) && Array.isArray(normalized)) {
+    if (!normalized.length) return current;
+    return Array.from({ length: Math.max(current.length, normalized.length) }, (_, index) => (
+      index < normalized.length
+        ? mergeNormalizedValue(current[index], normalized[index])
+        : current[index]
+    ));
+  }
+  if (
+    current
+    && normalized
+    && typeof current === "object"
+    && typeof normalized === "object"
+    && !Array.isArray(current)
+    && !Array.isArray(normalized)
+  ) {
+    const keys = new Set([...Object.keys(current), ...Object.keys(normalized)]);
+    return Object.fromEntries([...keys].map((key) => [
+      key,
+      mergeNormalizedValue(current[key], normalized[key]),
+    ]));
+  }
+  return isMeaningful(normalized) || !isMeaningful(current) ? normalized : current;
+}
+
+// Normalization is allowed to improve a live draft, but an incomplete provider
+// response must not erase values already captured by the live tool calls.
+export function mergeNormalizedIntakeDraft(current, normalized) {
+  return mergeNormalizedValue(current, normalized);
+}
+
 function pathSegments(path) {
   return path.match(/[a-z][a-z0-9_]*|\[\d+\]/g)?.map((segment) => (
     segment.startsWith("[") ? Number(segment.slice(1, -1)) : segment
@@ -142,7 +194,7 @@ export function applyIntakePatch(draft, patch) {
       delete parent[finalSegment];
     }
   } else {
-    parent[finalSegment] = patch.value;
+    parent[finalSegment] = normalizeIntakePatchValue(patch.path, operation, patch.value);
   }
   return next;
 }

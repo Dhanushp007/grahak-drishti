@@ -8,15 +8,94 @@ from services.api.app.intake_schemas import IntakeDraft, IntakeNormalizeRequest
 
 LIVE_SYSTEM_INSTRUCTION = """
 You are a careful consumer complaint intake assistant for GRAHAK-DRISHTI.
-Speak in the language the consumer uses, including English, Hindi, and natural
-Hinglish code-switching. Ask one short follow-up question at a time and do not
+Start every new session in English. Before asking anything about the complaint,
+ask exactly one question in English: Which language would you prefer for this
+conversation: English, Hindi, or Hinglish? Wait for the consumer to answer that
+language question. Until they answer, speak only English, even if their first
+message is in Hindi, and do not collect complaint details or call
+patch_intake_draft. After the consumer chooses, use that language for the rest
+of the conversation. Record English as en, Hindi as hi, and Hinglish as hinglish
+in complaint.language. Ask one short follow-up question at a time and do not
 invent names, dates, amounts, order references, contact details, legal findings,
 or evidence. Treat the consumer's account as an allegation or report, not an
-established fact. You may help organize a private draft, but you must never
-submit a complaint, contact a seller or authority, or claim that a regulator has
-accepted anything. Ask for explicit case-processing consent before the review
-step. A human must review and confirm every field before official submission.
+established fact. Whenever the consumer explicitly states or corrects a detail,
+immediately call patch_intake_draft before asking the next question. Use one call
+per field and do not wait until the end. Use the exact field paths offered by
+the tool schema. For list fields, use append with a JSON-compatible value. For
+corrections, use set. For removals, use remove with an empty value. You may help
+organize a private draft, but you must never submit a complaint, contact a seller
+or authority, or claim that a regulator has accepted anything. Ask for explicit
+case-processing consent before the review step. A human must review and confirm
+every field before official submission.
 """.strip()
+
+PATCH_PATHS = (
+    "complaint.description",
+    "complaint.language",
+    "complaint.self_assessed_priority",
+    "consumer.consumer_type",
+    "consumer.full_name",
+    "consumer.contact.email",
+    "consumer.contact.phone",
+    "consumer.contact.preferred_method",
+    "consumer.address.line1",
+    "consumer.address.line2",
+    "consumer.address.city",
+    "consumer.address.district",
+    "consumer.address.state",
+    "consumer.address.postal_code",
+    "incident.sector",
+    "incident.category",
+    "incident.subcategory",
+    "incident.occurred_on",
+    "incident.discovered_on",
+    "incident.date_precision",
+    "incident.is_recurring",
+    "incident.urgency",
+    "incident.what_was_promised",
+    "incident.what_happened",
+    "business.company_name",
+    "business.seller_name",
+    "business.marketplace_or_channel",
+    "business.website_or_app",
+    "business.business_location",
+    "transaction.product_or_service",
+    "transaction.product_identifier",
+    "transaction.order_reference",
+    "transaction.invoice_reference",
+    "transaction.booking_or_policy_reference",
+    "transaction.transaction_date",
+    "transaction.delivery_date",
+    "transaction.cancellation_date",
+    "transaction.order_status",
+    "transaction.delivery_status",
+    "transaction.amount_paid",
+    "transaction.amount_disputed",
+    "transaction.refund_expected",
+    "transaction.refund_received",
+    "transaction.remaining_loss",
+    "transaction.payment_method",
+    "transaction.payment_reference_last_four",
+    "transaction.reference_verification_status",
+    "resolution_attempts",
+    "requested_remedy.primary",
+    "requested_remedy.amount_requested",
+    "requested_remedy.other_requests",
+    "requested_remedy.compensation_requested",
+    "escalation.previous_authorities_contacted",
+    "escalation.preferred_next_step",
+    "escalation.nch_reference",
+    "escalation.regulator_reference",
+    "escalation.e_jagriti_reference",
+    "escalation.official_escalation_requested",
+    "evidence",
+    "consents.case_processing",
+    "consents.aggregate_intelligence",
+    "consents.share_with_official_authority",
+    "data_quality.reported_by",
+    "data_quality.verification_status",
+    "data_quality.notes",
+)
 
 PATCH_TOOL_DECLARATION = {
     "name": "patch_intake_draft",
@@ -25,10 +104,10 @@ PATCH_TOOL_DECLARATION = {
         "type": "OBJECT",
         "properties": {
             "operation": {"type": "STRING", "enum": ["set", "append", "remove"]},
-            "path": {"type": "STRING"},
+            "path": {"type": "STRING", "enum": list(PATCH_PATHS)},
             "value": {"type": "STRING"},
         },
-        "required": ["path"],
+        "required": ["path", "value"],
     },
 }
 
