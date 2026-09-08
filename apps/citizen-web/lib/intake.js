@@ -127,7 +127,12 @@ function normalizeIntakePatchValue(path, operation, value) {
 function mergeNormalizedValue(current, normalized) {
   if (normalized === undefined) return current;
   if (Array.isArray(current) && Array.isArray(normalized)) {
-    return normalized.length ? normalized : current;
+    if (!normalized.length) return current;
+    return Array.from({ length: Math.max(current.length, normalized.length) }, (_, index) => (
+      index < normalized.length
+        ? mergeNormalizedValue(current[index], normalized[index])
+        : current[index]
+    ));
   }
   if (
     current

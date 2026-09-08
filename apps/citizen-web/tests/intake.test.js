@@ -110,6 +110,25 @@ test("does not let an incomplete normalization response erase live draft values"
   assert.equal(merged.incident.category, "refund");
 });
 
+test("preserves live list entries when normalization returns a partial list", () => {
+  const draft = createInitialIntakeDraft();
+  draft.resolution_attempts = [
+    { channel: "seller", response_summary: "No response", outcome: "pending" },
+    { channel: "bank", response_summary: "Chargeback opened", outcome: "pending" },
+  ];
+
+  const normalized = createInitialIntakeDraft();
+  normalized.resolution_attempts = [
+    { channel: "seller", response_summary: "Seller did not respond" },
+  ];
+
+  const merged = mergeNormalizedIntakeDraft(draft, normalized);
+  assert.deepEqual(merged.resolution_attempts, [
+    { channel: "seller", response_summary: "Seller did not respond", outcome: "pending" },
+    { channel: "bank", response_summary: "Chargeback opened", outcome: "pending" },
+  ]);
+});
+
 test("maps a reviewed rich draft to the complaint API contract", () => {
   const draft = createInitialIntakeDraft();
   draft.complaint.description = "Refund is delayed.";
